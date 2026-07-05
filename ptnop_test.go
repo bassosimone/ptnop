@@ -3,6 +3,7 @@
 //
 // Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/config_test.go
 // Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/errclassifier_test.go
+// Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/slogger_test.go
 //
 
 package ptnop
@@ -75,4 +76,26 @@ func TestNewConfig(t *testing.T) {
 	// TimeNow should be set and return a valid time
 	now := cfg.TimeNow()
 	assert.False(t, now.IsZero())
+}
+
+func TestDefaultSLogger(t *testing.T) {
+	logger := DefaultSLogger()
+
+	// Should return a non-nil logger
+	assert.NotNil(t, logger)
+
+	// Should be able to call Debug and Info without panic (discards output)
+	logger.Debug("debug message", "key", "value")
+	logger.Info("info message", "key", "value")
+}
+
+func TestDiscardSLogger(t *testing.T) {
+	logger := discardSLogger{}
+
+	// Verify it implements SLogger
+	var _ SLogger = logger
+
+	// Should be able to call Debug and Info without panic (discards output)
+	logger.Debug("debug message", "key1", "value1", "key2", 42)
+	logger.Info("info message", "key1", "value1", "key2", 42)
 }
