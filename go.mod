@@ -4,6 +4,7 @@ go 1.26.4
 
 require (
 	github.com/bassosimone/errclass v0.0.0-20260622075814-f5cf99a63fcb
+	github.com/bassosimone/runtimex v0.0.0-20260615112505-ee72c4f0769e
 	github.com/stretchr/testify v1.11.1
 )
 

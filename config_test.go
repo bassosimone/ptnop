@@ -1,4 +1,9 @@
+//
 // SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/config_test.go
+// Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/errclassifier_test.go
+//
 
 package ptnop
 
@@ -20,11 +25,11 @@ func TestDefaultErrClassifier(t *testing.T) {
 	assert.Equal(t, "", result)
 
 	// Should classify ErrSkip as ESKIP
-	result = DefaultErrClassifier.Classify(ErrSkip)
+	result = DefaultErrClassifier.Classify(NewErrSkip(errors.New("mocked")))
 	assert.Equal(t, ESKIP, result)
 
 	// Should classify a wrapped ErrSkip as ESKIP
-	wrapped := fmt.Errorf("stage failed: %w", ErrSkip)
+	wrapped := fmt.Errorf("stage failed: %w", NewErrSkip(errors.New("mocked")))
 	result = DefaultErrClassifier.Classify(wrapped)
 	assert.Equal(t, ESKIP, result)
 
@@ -37,9 +42,26 @@ func TestDefaultErrClassifier(t *testing.T) {
 	assert.Equal(t, errclass.EGENERIC, result)
 }
 
+func TestNewErrSkip(t *testing.T) {
+	// Wrapping a wrapped error should return the same error.
+	expectedErr := NewErrSkip(errors.New("mocked"))
+	gotErr := NewErrSkip(expectedErr)
+	assert.NotEqual(t, ErrSkip{Err: expectedErr}, gotErr)
+	assert.Equal(t, expectedErr, gotErr)
+
+	// Constructing with a nil error panics.
+	assert.Panics(t, func() { NewErrSkip(nil) })
+}
+
+func TestErrSkip(t *testing.T) {
+	underlying := errors.New("mocked")
+	err := NewErrSkip(underlying)
+	assert.Equal(t, "mocked", err.Error())
+	assert.Same(t, underlying, errors.Unwrap(err))
+}
+
 func TestNewConfig(t *testing.T) {
 	cfg := NewConfig()
-
 	require.NotNil(t, cfg)
 
 	// Dialer should be set to *net.Dialer

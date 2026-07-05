@@ -1,4 +1,9 @@
+//
 // SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/config.go
+// Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/errclassifier.go
+//
 
 package ptnop
 
@@ -9,6 +14,7 @@ import (
 	"time"
 
 	"github.com/bassosimone/errclass"
+	"github.com/bassosimone/runtimex"
 )
 
 // Dialer abstracts the [*net.Dialer] behavior.
@@ -41,19 +47,45 @@ func (f ErrClassifierFunc) Classify(err error) string {
 	return f(err)
 }
 
-// ErrSkip is a sentinel error indicating that a pipeline stage was skipped
+// ErrSkip is a wrapper error indicating that a pipeline stage was skipped
 // because a previous stage failed. Stages that receive an error-carrying
 // input emit their start/done events with this error rather than executing.
-var ErrSkip = errors.New("ptnop: previous stage failed")
+type ErrSkip struct {
+	Err error
+}
+
+// Error returns a string representation of the error.
+func (err ErrSkip) Error() string {
+	return err.Err.Error()
+}
+
+// Unwrap returns the underlying error.
+func (err ErrSkip) Unwrap() error {
+	return err.Err
+}
 
 // ESKIP is the error class string for [ErrSkip].
 const ESKIP = "ESKIP"
 
+// NewErrSkip creates a new [ErrSkip] instance wrapping the given error
+// unless the error is already an [ErrSkip], in which case we return the
+// unmodified [ErrSkip] instance to the caller.
+//
+// Note that this function panics if passed a nil err.
+func NewErrSkip(err error) error {
+	runtimex.Assert(err != nil)
+	if _, ok := errors.AsType[ErrSkip](err); ok {
+		return err
+	}
+	return ErrSkip{err}
+}
+
 // DefaultErrClassifier classifies errors into Unix-like error names.
-// It recognizes [ErrSkip] as [ESKIP] and delegates all other errors
-// to [errclass.New] (e.g., "ETIMEDOUT", "ECONNRESET", "EDNS_NONAME").
+//
+// It recognizes [ErrSkip] as [ESKIP] and delegates all other errors to
+// [errclass.New] (e.g., "ETIMEDOUT", "ECONNRESET").
 var DefaultErrClassifier = ErrClassifierFunc(func(err error) string {
-	if errors.Is(err, ErrSkip) {
+	if _, ok := errors.AsType[ErrSkip](err); ok {
 		return ESKIP
 	}
 	return errclass.New(err)
@@ -62,6 +94,7 @@ var DefaultErrClassifier = ErrClassifierFunc(func(err error) string {
 // Config holds common configuration for ptnop operations.
 //
 // Pass this to constructor functions to pre-wire dependencies.
+//
 // All fields have sensible defaults set by [NewConfig].
 type Config struct {
 	// Dialer is used by [*ConnectFunc].
