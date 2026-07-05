@@ -1,7 +1,13 @@
 github.com/bassosimone/errclass v0.0.0-20260622075814-f5cf99a63fcb h1:jfqjYZDJqx2VeYMMo79HQa/s8jlR0WbBONaqXbcZvUk=
 github.com/bassosimone/errclass v0.0.0-20260622075814-f5cf99a63fcb/go.mod h1:iCdYQvFRQh0150RAsMxFT+svFsQj11IJS1ZyIXoMjU4=
+github.com/bassosimone/netstub v0.0.0-20260615120935-aee6f411f7c8 h1:BnNdX6yBGA5ozXuY9LCV+n4qDlaA65yVb83duT76aHY=
+github.com/bassosimone/netstub v0.0.0-20260615120935-aee6f411f7c8/go.mod h1:3Y8PTZ3csSKBa/MnHhbj8TYsWw3e+y9Rxpckhes4TQ0=
 github.com/bassosimone/runtimex v0.0.0-20260615112505-ee72c4f0769e h1:J3ERL+Iben+Aog/hfy+qcRuhzH6dZceq/v1GuEyqlPA=
 github.com/bassosimone/runtimex v0.0.0-20260615112505-ee72c4f0769e/go.mod h1:GDr46yuJzuDkzOMI1/9Voo3s7VmYBU/6pkuaI5FR7gE=
+github.com/bassosimone/safeconn v0.0.0-20260623163941-cb87a84f7523 h1:m0yjXIQxaNMtk6VnMHpz4v9pwTzsuO7vLkcU4bGGoI4=
+github.com/bassosimone/safeconn v0.0.0-20260623163941-cb87a84f7523/go.mod h1:dmqJ5FKalOoZUNFSNYU4F0mrb9T+she9kZT4cMfqnd4=
+github.com/bassosimone/slogstub v0.0.0-20260615170657-300f9af8067a h1:A0Nrp9HWjDH2M6HtFvOJajw2TPmIkooLaLKJAEbhRw8=
+github.com/bassosimone/slogstub v0.0.0-20260615170657-300f9af8067a/go.mod h1:yZjFw/4qVkXpZJze6m4DnKshfIhc3Cg0Z587D3ZIP4M=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

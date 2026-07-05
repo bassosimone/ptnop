@@ -13,7 +13,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"testing"
 
 	"github.com/bassosimone/errclass"
@@ -65,10 +64,6 @@ func TestErrSkip(t *testing.T) {
 func TestNewConfig(t *testing.T) {
 	cfg := NewConfig()
 	require.NotNil(t, cfg)
-
-	// Dialer should be set to *net.Dialer
-	_, ok := cfg.Dialer.(*net.Dialer)
-	assert.True(t, ok, "Dialer should be *net.Dialer")
 
 	// ErrClassifier should use errclass by default
 	assert.Equal(t, "", cfg.ErrClassifier.Classify(nil))

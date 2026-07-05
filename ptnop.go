@@ -3,8 +3,6 @@
 //
 // Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/config.go
 // Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/errclassifier.go
-// Adapted from: https://github.com/ooni/probe-cli/blob/v3.20.1/internal/netxlite/dialer.go
-// Adapted from: https://github.com/rbmk-project/rbmk/blob/v0.17.0/pkg/x/netcore/dialer.go
 // Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/slogger.go
 // Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/func.go
 // Adapted from: https://github.com/ooni/probe-cli/blob/v3.20.0/internal/x/dslx/fxasync.go
@@ -18,30 +16,11 @@ package ptnop
 import (
 	"context"
 	"errors"
-	"net"
 	"time"
 
 	"github.com/bassosimone/errclass"
 	"github.com/bassosimone/runtimex"
 )
-
-// TODO(bassosimone): Dialer should belong to the connect operation and we
-// should define it there and avoid passing it to the Config. This deviates
-// from the nop API but honestly it was an oversight to configure the
-// dialer there. We should remove it from Config and remove the reference
-// to the 'Adapted from' dialer code above.
-
-// TODO(bassosimone): the default dialer should be refactored to avoid
-// configuring multipath TCP since it's not ideal using multipath TCP
-// when measuring specific targets as it obfuscates the path we're using.
-
-// Dialer abstracts the [*net.Dialer] behavior.
-//
-// By making [*ConnectFunc] depend on an abstract implementation we
-// allow for unit testing and for using alternative dialers.
-type Dialer interface {
-	DialContext(ctx context.Context, network, address string) (net.Conn, error)
-}
 
 // ErrClassifier classifies errors into categorical strings for analysis.
 //
@@ -115,11 +94,6 @@ var DefaultErrClassifier = ErrClassifierFunc(func(err error) string {
 //
 // All fields have sensible defaults set by [NewConfig].
 type Config struct {
-	// Dialer is used by [*ConnectFunc].
-	//
-	// Set by [NewConfig] to [*net.Dialer].
-	Dialer Dialer
-
 	// ErrClassifier classifies errors for structured logging.
 	//
 	// Set by [NewConfig] to [DefaultErrClassifier], which uses the
@@ -135,7 +109,6 @@ type Config struct {
 // NewConfig creates a [*Config] with sensible defaults.
 func NewConfig() *Config {
 	return &Config{
-		Dialer:        &net.Dialer{},
 		ErrClassifier: DefaultErrClassifier,
 		TimeNow:       time.Now,
 	}
