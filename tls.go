@@ -23,7 +23,7 @@ import (
 
 // TLSEngine is the engine to create a new [TLSConn].
 type TLSEngine interface {
-	// Client builds a new client [TLSConn].
+	// Client builds a new client [TLSConn] which must not be nil.
 	Client(conn net.Conn, config *tls.Config) TLSConn
 
 	// Name returns the engine name.
@@ -95,7 +95,10 @@ func NewTLSHandshakeFunc(cfg *Config, tlsConfig *tls.Config, logger SLogger) *TL
 
 // TLSHandshakeFunc performs a TLS handshake over an existing [net.Conn].
 //
-// The input is [Result] wrapping a [net.Conn] or an error.
+// The input is [Result] wrapping a [net.Conn] or an error. The input is
+// expected to be either-or: when it carries an error, [TLSHandshakeFunc.Call]
+// ignores the value without closing it, per the [Func] resource cleanup
+// contract. The code panics if the either-or input/output invariants are violated.
 //
 // The [*tls.Config] is configured using [NewTLSHandshakeFunc].
 //
@@ -133,7 +136,10 @@ var _ Func[net.Conn, TLSConn] = &TLSHandshakeFunc{}
 
 // Call invokes the [*TLSHandshakeFunc] to create a [TLSConn] from a [net.Conn].
 func (op *TLSHandshakeFunc) Call(ctx context.Context, conn Result[net.Conn]) Result[TLSConn] {
-	// Log before initiating the handshake
+	// Enforce the input invariant.
+	runtimex.Assert((conn.Value != nil && conn.Err == nil) || (conn.Value == nil && conn.Err != nil))
+
+	// Log before initiating the handshake.
 	config := op.tlsConfig()
 	t0 := op.TimeNow()
 	deadline, _ := ctx.Deadline()
@@ -151,7 +157,7 @@ func (op *TLSHandshakeFunc) Call(ctx context.Context, conn Result[net.Conn]) Res
 		slog.Bool("tlsSkipVerify", config.InsecureSkipVerify),
 	)
 
-	// Do the TLS handshake
+	// Do the TLS handshake.
 	var (
 		err   error
 		state tls.ConnectionState
@@ -160,6 +166,7 @@ func (op *TLSHandshakeFunc) Call(ctx context.Context, conn Result[net.Conn]) Res
 	)
 	if conn.Err == nil {
 		tconn = op.Engine.Client(conn.Value, config)
+		runtimex.Assert(tconn != nil)
 		err = tconn.HandshakeContext(ctx)
 		t = op.TimeNow()
 		state = tconn.ConnectionState()
@@ -172,7 +179,10 @@ func (op *TLSHandshakeFunc) Call(ctx context.Context, conn Result[net.Conn]) Res
 		t = op.TimeNow()
 	}
 
-	// Log after the handshake
+	// Enforce the output invariant.
+	runtimex.Assert((tconn != nil && err == nil) || (tconn == nil && err != nil))
+
+	// Log after the handshake.
 	op.Logger.Info(
 		"tlsHandshakeDone",
 		slog.Time("deadline", deadline),
@@ -194,7 +204,7 @@ func (op *TLSHandshakeFunc) Call(ctx context.Context, conn Result[net.Conn]) Res
 		slog.String("tlsVersion", tls.VersionName(state.Version)),
 	)
 
-	// Return the suitable result type
+	// Return the suitable result type.
 	return Result[TLSConn]{Err: err, Value: tconn}
 }
 

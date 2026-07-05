@@ -5,6 +5,7 @@
 // Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/errclassifier_test.go
 // Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/slogger_test.go
 // Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/compose_test.go
+// Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/unit_test.go
 //
 
 package ptnop
@@ -116,4 +117,24 @@ func TestCompose2(t *testing.T) {
 	value, err := composed.Call(context.Background(), Result[int]{Value: 42}).Unpack()
 	assert.NoError(t, err)
 	assert.Equal(t, 8, value) // len("hello 42") = 8
+}
+
+func TestUnit(t *testing.T) {
+	// Test that Unit zero value is usable
+	var u Unit
+	assert.Equal(t, Unit{}, u)
+
+	// Test that Unit values are equal
+	u1 := Unit{}
+	u2 := Unit{}
+	assert.Equal(t, u1, u2)
+}
+
+func TestNewResultUnit(t *testing.T) {
+	result := NewResultUnit()
+
+	// The result should carry a Unit value and no error.
+	value, err := result.Unpack()
+	assert.NoError(t, err)
+	assert.Equal(t, Unit{}, value)
 }

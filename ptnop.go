@@ -9,6 +9,7 @@
 // Adapted from: https://github.com/ooni/probe-cli/blob/v3.20.0/internal/x/dslx/fxcore.go
 // Adapted from: https://github.com/ooni/probe-cli/blob/v3.20.0/internal/x/dslx/fxstream.go
 // Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/compose.go
+// Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/unit.go
 //
 
 package ptnop
@@ -163,12 +164,9 @@ func (discardSLogger) Info(msg string, args ...any) {
 // types could be wrapped in this fashion (e.g. `Result[net.Conn]` instead of
 // introducing our own `Conn` type including an explicit `Err` field).
 //
-// The semantics of this type is the same as a Go function returning a value or
-// an error. This fact is made explicit by the Unpack method. While in most cases
-// it is reasonable to expect either the value or the error to be set, in some
-// cases both an error an a value may appear. The specifics are documented by
-// each function and cannot be guaranteed for each and every function. For example,
-// [io.Reader] may return both a number of bytes and an error.
+// The type system does not allow to enforce that just one of `Err` and `Value`
+// is not a zero value and the other type is a zero value. However, in general, the
+// convention in this library is either-or, as documented by each [Func].
 type Result[T any] struct {
 	Err   error
 	Value T
@@ -185,12 +183,21 @@ func (r Result[T]) Unpack() (T, error) {
 // the input and the output are [Result] wrapped. The input may already contain
 // an error if the previous pipeline stage has failed.
 //
-// For additional details regarding composition functions into pipelines and the
-// expected error propagation rules, please see [Compose2] documentation.
+// The expectation is that the input contains either a valid [Result] value (as
+// documented by each [Func]) and a nil [Result] error or a zero [Result] value
+// and a non-nil [Result] error.
 //
-// Resource cleanup contract: when a Func receives a closeable resource as input
-// and returns an error, it is responsible for closing that resource before returning.
-// This ensures that composed pipelines do not leak resources on partial failure.
+// The expectation is that the output contains either a valid [Result] value (as
+// documented by each [Func]) and a nil [Result] error or a zero [Result] value
+// and a non-nil [Result] error.
+//
+// Whenever a function receives a valid [Result] value and returns a non-nil
+// [Result] error, it must close the [Result] value resource where applicable
+// along with any additional resources it constructed.
+//
+// Together these rules mean that a [Func] receiving an error [Result] input
+// may ignore the [Result] value and that composed pipelines never leak resources
+// when a failure occurs inside a specific stage.
 type Func[A, B any] interface {
 	Call(ctx context.Context, input Result[A]) Result[B]
 }
@@ -230,4 +237,16 @@ type compose2[A, B, C any] struct {
 // Call implements [Func].
 func (c compose2[A, B, C]) Call(ctx context.Context, input Result[A]) Result[C] {
 	return c.op2.Call(ctx, c.op1.Call(ctx, input))
+}
+
+// Unit is a type not containing any value (analogous to an
+// explicit `void` type in C and C++).
+//
+// Use this type to construct [Func] that take no argument
+// or return no value to the caller.
+type Unit struct{}
+
+// NewResultUnit constructs a [Result] containing a [Unit] with nil error.
+func NewResultUnit() Result[Unit] {
+	return Result[Unit]{Value: Unit{}}
 }

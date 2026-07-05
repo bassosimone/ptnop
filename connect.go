@@ -15,10 +15,13 @@ import (
 	"net/netip"
 	"time"
 
+	"github.com/bassosimone/runtimex"
 	"github.com/bassosimone/safeconn"
 )
 
-// Dialer abstracts the [*net.Dialer] behavior for [*ConnectFunc].
+// Dialer abstracts the [*net.Dialer] behavior for [*ConnectFunc]. Like
+// the [*net.Dialer], this implementation must always return a valid [net.Conn]
+// or an error. It must not return (nil, nil) or a [net.Conn] and an error.
 //
 // By making [*ConnectFunc] depend on an abstract implementation we
 // allow for unit testing and for using alternative dialers.
@@ -56,7 +59,9 @@ func NewConnectFunc(cfg *Config, network string, logger SLogger) *ConnectFunc {
 
 // ConnectFunc dials a [netip.AddrPort] using a configured network.
 //
-// Returns a [Result] containing either a valid [net.Conn] or an error, never both.
+// Expects either a valid [netip.AddrPort] or an error. Returns a [Result] containing
+// either a valid [net.Conn] or an error, never both. The code panics if the
+// input/output expectations are violated.
 //
 // All fields are safe to modify after construction but before first use.
 type ConnectFunc struct {
@@ -90,6 +95,9 @@ var _ Func[netip.AddrPort, net.Conn] = &ConnectFunc{}
 
 // Call invokes the [*ConnectFunc] to connect to the given [netip.AddrPort].
 func (op *ConnectFunc) Call(ctx context.Context, address Result[netip.AddrPort]) Result[net.Conn] {
+	// Enforce the input invariant.
+	runtimex.Assert((address.Value.IsValid() && address.Err == nil) || (!address.Value.IsValid() && address.Err != nil))
+
 	// Log before dialing the connection.
 	t0 := op.TimeNow()
 	deadline, _ := ctx.Deadline()
@@ -115,6 +123,9 @@ func (op *ConnectFunc) Call(ctx context.Context, address Result[netip.AddrPort])
 	} else {
 		err = NewErrSkip(address.Err)
 	}
+
+	// Enforce the output invariant.
+	runtimex.Assert((conn != nil && err == nil) || (conn == nil && err != nil))
 
 	// Log after the dial attempt.
 	op.Logger.Info(
