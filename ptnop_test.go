@@ -22,6 +22,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Ensure that the [DefaultErrClassifier] correctly classifies [ErrSkip] as
+// [ESKIP] as well as all the errors classified by [errclass].
 func TestDefaultErrClassifier(t *testing.T) {
 	// Should return empty string for nil error
 	result := DefaultErrClassifier.Classify(nil)
@@ -45,9 +47,15 @@ func TestDefaultErrClassifier(t *testing.T) {
 	assert.Equal(t, errclass.EGENERIC, result)
 }
 
+// Ensure that [NewErrSkip] is idempotent and panics on a nil error, and make
+// sure that the returned [ErrSkip] instance is correctly initialized.
 func TestNewErrSkip(t *testing.T) {
+	underlyingErr := errors.New("mocked")
+	expectedErr := NewErrSkip(underlyingErr)
+	assert.Same(t, underlyingErr, errors.Unwrap(expectedErr))
+	assert.Equal(t, "mocked", expectedErr.Error())
+
 	// Wrapping a wrapped error should return the same error.
-	expectedErr := NewErrSkip(errors.New("mocked"))
 	gotErr := NewErrSkip(expectedErr)
 	assert.NotEqual(t, ErrSkip{Err: expectedErr}, gotErr)
 	assert.Equal(t, expectedErr, gotErr)
@@ -56,13 +64,7 @@ func TestNewErrSkip(t *testing.T) {
 	assert.Panics(t, func() { NewErrSkip(nil) })
 }
 
-func TestErrSkip(t *testing.T) {
-	underlying := errors.New("mocked")
-	err := NewErrSkip(underlying)
-	assert.Equal(t, "mocked", err.Error())
-	assert.Same(t, underlying, errors.Unwrap(err))
-}
-
+// Ensure that [NewConfig] constructs a correctly initialized [*Config].
 func TestNewConfig(t *testing.T) {
 	cfg := NewConfig()
 	require.NotNil(t, cfg)
@@ -76,8 +78,8 @@ func TestNewConfig(t *testing.T) {
 	assert.False(t, now.IsZero())
 }
 
-// [DefaultSLogger] returns a [SLogger] that does not crash on Debug and Info
-// and that reports all log levels as disabled.
+// Ensure that [DefaultSLogger] returns a [SLogger] that does not crash on Debug
+// and Info, and that reports all log levels as disabled.
 func TestDefaultSLogger(t *testing.T) {
 	// The constructor should return a non-nil logger
 	logger := DefaultSLogger()
@@ -99,6 +101,7 @@ func TestDefaultSLogger(t *testing.T) {
 	assert.False(t, logger.Enabled(ctx, slog.LevelError))
 }
 
+// Ensure that [Result.Unpack] correctly unpacks the [Result] fields into a tuple.
 func TestResult_Unpack(t *testing.T) {
 	expectValue := 10
 	expectErr := errors.New("mocked")
@@ -108,6 +111,7 @@ func TestResult_Unpack(t *testing.T) {
 	assert.Same(t, expectErr, gotErr)
 }
 
+// Ensure that [Compose2] allows composing two [Func].
 func TestCompose2(t *testing.T) {
 	op1 := FuncAdapter[int, string](func(ctx context.Context, n Result[int]) Result[string] {
 		return Result[string]{Value: fmt.Sprintf("hello %d", n.Value)}
@@ -116,11 +120,14 @@ func TestCompose2(t *testing.T) {
 		return Result[int]{Value: len(s.Value)}
 	})
 	composed := Compose2(op1, op2)
+
 	value, err := composed.Call(context.Background(), Result[int]{Value: 42}).Unpack()
+
 	assert.NoError(t, err)
 	assert.Equal(t, 8, value) // len("hello 42") = 8
 }
 
+// Exercise basic properties of the [Unit] type.
 func TestUnit(t *testing.T) {
 	// Test that Unit zero value is usable
 	var u Unit
@@ -132,10 +139,9 @@ func TestUnit(t *testing.T) {
 	assert.Equal(t, u1, u2)
 }
 
+// Ensure that [NewResultUnit] constructs a [Result] with no error containing a [Unit] instance.
 func TestNewResultUnit(t *testing.T) {
 	result := NewResultUnit()
-
-	// The result should carry a Unit value and no error.
 	value, err := result.Unpack()
 	assert.NoError(t, err)
 	assert.Equal(t, Unit{}, value)
