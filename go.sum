@@ -8,6 +8,8 @@ github.com/bassosimone/safeconn v0.0.0-20260623163941-cb87a84f7523 h1:m0yjXIQxaN
 github.com/bassosimone/safeconn v0.0.0-20260623163941-cb87a84f7523/go.mod h1:dmqJ5FKalOoZUNFSNYU4F0mrb9T+she9kZT4cMfqnd4=
 github.com/bassosimone/slogstub v0.0.0-20260615170657-300f9af8067a h1:A0Nrp9HWjDH2M6HtFvOJajw2TPmIkooLaLKJAEbhRw8=
 github.com/bassosimone/slogstub v0.0.0-20260615170657-300f9af8067a/go.mod h1:yZjFw/4qVkXpZJze6m4DnKshfIhc3Cg0Z587D3ZIP4M=
+github.com/bassosimone/tlsstub v0.0.0-20260623164556-2d0e90df5147 h1:0umzRXREV14vOb+0gF2fj1BLfC9dtFQqr9WmJzyNk2M=
+github.com/bassosimone/tlsstub v0.0.0-20260623164556-2d0e90df5147/go.mod h1:s54SdBgJP4WHwPV9n8smp4qfQ3ZdEXhvgJddUiD4pUA=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

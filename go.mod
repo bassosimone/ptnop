@@ -8,6 +8,7 @@ require (
 	github.com/bassosimone/runtimex v0.0.0-20260615112505-ee72c4f0769e
 	github.com/bassosimone/safeconn v0.0.0-20260623163941-cb87a84f7523
 	github.com/bassosimone/slogstub v0.0.0-20260615170657-300f9af8067a
+	github.com/bassosimone/tlsstub v0.0.0-20260623164556-2d0e90df5147
 	github.com/stretchr/testify v1.11.1
 )
 
