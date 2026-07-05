@@ -4,6 +4,7 @@
 // Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/config_test.go
 // Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/errclassifier_test.go
 // Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/slogger_test.go
+// Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/compose_test.go
 //
 
 package ptnop
@@ -98,4 +99,26 @@ func TestDiscardSLogger(t *testing.T) {
 	// Should be able to call Debug and Info without panic (discards output)
 	logger.Debug("debug message", "key1", "value1", "key2", 42)
 	logger.Info("info message", "key1", "value1", "key2", 42)
+}
+
+func TestResult_Unpack(t *testing.T) {
+	expectValue := 10
+	expectErr := errors.New("mocked")
+	result := Result[int]{Value: expectValue, Err: expectErr}
+	gotValue, gotErr := result.Unpack()
+	assert.Equal(t, expectValue, gotValue)
+	assert.Same(t, expectErr, gotErr)
+}
+
+func TestCompose2(t *testing.T) {
+	op1 := FuncAdapter[int, string](func(ctx context.Context, n Result[int]) Result[string] {
+		return Result[string]{Value: fmt.Sprintf("hello %d", n.Value)}
+	})
+	op2 := FuncAdapter[string, int](func(ctx context.Context, s Result[string]) Result[int] {
+		return Result[int]{Value: len(s.Value)}
+	})
+	composed := Compose2(op1, op2)
+	value, err := composed.Call(context.Background(), Result[int]{Value: 42}).Unpack()
+	assert.NoError(t, err)
+	assert.Equal(t, 8, value) // len("hello 42") = 8
 }

@@ -6,6 +6,11 @@
 // Adapted from: https://github.com/ooni/probe-cli/blob/v3.20.1/internal/netxlite/dialer.go
 // Adapted from: https://github.com/rbmk-project/rbmk/blob/v0.17.0/pkg/x/netcore/dialer.go
 // Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/slogger.go
+// Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/func.go
+// Adapted from: https://github.com/ooni/probe-cli/blob/v3.20.0/internal/x/dslx/fxasync.go
+// Adapted from: https://github.com/ooni/probe-cli/blob/v3.20.0/internal/x/dslx/fxcore.go
+// Adapted from: https://github.com/ooni/probe-cli/blob/v3.20.0/internal/x/dslx/fxstream.go
+// Adapted from: https://github.com/bassosimone/nop/blob/ae41909903156c3fc9c0d80a56ce884c1ca4eb4a/compose.go
 //
 
 package ptnop
@@ -19,6 +24,16 @@ import (
 	"github.com/bassosimone/errclass"
 	"github.com/bassosimone/runtimex"
 )
+
+// TODO(bassosimone): Dialer should belong to the connect operation and we
+// should define it there and avoid passing it to the Config. This deviates
+// from the nop API but honestly it was an oversight to configure the
+// dialer there. We should remove it from Config and remove the reference
+// to the 'Adapted from' dialer code above.
+
+// TODO(bassosimone): the default dialer should be refactored to avoid
+// configuring multipath TCP since it's not ideal using multipath TCP
+// when measuring specific targets as it obfuscates the path we're using.
 
 // Dialer abstracts the [*net.Dialer] behavior.
 //
@@ -166,4 +181,80 @@ func (discardSLogger) Debug(msg string, args ...any) {
 // Info implements [SLogger].
 func (discardSLogger) Info(msg string, args ...any) {
 	// nothing
+}
+
+// Result represents a T instance or an error.
+//
+// We use this type as a convenience to avoid adding an explicit `Err` field to
+// every returned type and to avoid creating additional types when standard library
+// types could be wrapped in this fashion (e.g. `Result[net.Conn]` instead of
+// introducing our own `Conn` type including an explicit `Err` field).
+//
+// The semantics of this type is the same as a Go function returning a value or
+// an error. This fact is made explicit by the Unpack method. While in most cases
+// it is reasonable to expect either the value or the error to be set, in some
+// cases both an error an a value may appear. The specifics are documented by
+// each function and cannot be guaranteed for each and every function. For example,
+// [io.Reader] may return both a number of bytes and an error.
+type Result[T any] struct {
+	Err   error
+	Value T
+}
+
+// Unpack returns the Err and Value fields as a tuple. This bridges the
+// single [Result] convention used in this library with expectations
+// of Go code, which typically return a tuple containing a result or an error.
+func (r Result[T]) Unpack() (T, error) {
+	return r.Value, r.Err
+}
+
+// Func is a generic operation that accepts an input and returns an output. Both
+// the input and the output are [Result] wrapped. The input may already contain
+// an error if the previous pipeline stage has failed.
+//
+// For additional details regarding composition functions into pipelines and the
+// expected error propagation rules, please see [Compose2] documentation.
+//
+// Resource cleanup contract: when a Func receives a closeable resource as input
+// and returns an error, it is responsible for closing that resource before returning.
+// This ensures that composed pipelines do not leak resources on partial failure.
+type Func[A, B any] interface {
+	Call(ctx context.Context, input Result[A]) Result[B]
+}
+
+// FuncAdapter wraps a function as a [Func] implementation.
+//
+// Use this to create ad-hoc [Func] instances from closures when you need
+// custom behavior that doesn't fit the existing primitives.
+type FuncAdapter[A, B any] func(ctx context.Context, input Result[A]) Result[B]
+
+// Call implements [Func].
+func (f FuncAdapter[A, B]) Call(ctx context.Context, input Result[A]) Result[B] {
+	return f(ctx, input)
+}
+
+// Compose2 chains two [Func] instances together into a pipeline.
+//
+// The output of op1 becomes the input to op2. If op1 returns an error,
+// op2 is called and should return an [ErrSkip] instance. The type system
+// cannot express this constraint and each operation implementation is
+// required to comply with this rule and enforce it with testing.
+//
+// This function composition design ensures that later pipeline stages
+// run even when previous stages failed, which causes the structured logs
+// to contain explicit information on each pipeline stage. Conversely,
+// short circuiting after a failure, hides the subsequent pipeline stages
+// and thus the overall intent of a given measurement pipeline.
+func Compose2[A, B, C any](op1 Func[A, B], op2 Func[B, C]) Func[A, C] {
+	return compose2[A, B, C]{op1, op2}
+}
+
+type compose2[A, B, C any] struct {
+	op1 Func[A, B]
+	op2 Func[B, C]
+}
+
+// Call implements [Func].
+func (c compose2[A, B, C]) Call(ctx context.Context, input Result[A]) Result[C] {
+	return c.op2.Call(ctx, c.op1.Call(ctx, input))
 }
