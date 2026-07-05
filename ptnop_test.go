@@ -14,6 +14,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"testing"
 
 	"github.com/bassosimone/errclass"
@@ -75,26 +76,27 @@ func TestNewConfig(t *testing.T) {
 	assert.False(t, now.IsZero())
 }
 
+// [DefaultSLogger] returns a [SLogger] that does not crash on Debug and Info
+// and that reports all log levels as disabled.
 func TestDefaultSLogger(t *testing.T) {
+	// The constructor should return a non-nil logger
 	logger := DefaultSLogger()
-
-	// Should return a non-nil logger
 	assert.NotNil(t, logger)
+
+	// The returned logger is a [discardSLogger]
+	_, ok := logger.(discardSLogger)
+	assert.True(t, ok)
 
 	// Should be able to call Debug and Info without panic (discards output)
 	logger.Debug("debug message", "key", "value")
 	logger.Info("info message", "key", "value")
-}
 
-func TestDiscardSLogger(t *testing.T) {
-	logger := discardSLogger{}
-
-	// Verify it implements SLogger
-	var _ SLogger = logger
-
-	// Should be able to call Debug and Info without panic (discards output)
-	logger.Debug("debug message", "key1", "value1", "key2", 42)
-	logger.Info("info message", "key1", "value1", "key2", 42)
+	// Checking for events being enabled should always return false
+	ctx := context.Background()
+	assert.False(t, logger.Enabled(ctx, slog.LevelDebug))
+	assert.False(t, logger.Enabled(ctx, slog.LevelInfo))
+	assert.False(t, logger.Enabled(ctx, slog.LevelWarn))
+	assert.False(t, logger.Enabled(ctx, slog.LevelError))
 }
 
 func TestResult_Unpack(t *testing.T) {

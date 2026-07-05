@@ -143,19 +143,22 @@ func (op *TLSHandshakeFunc) Call(ctx context.Context, conn Result[net.Conn]) Res
 	config := op.tlsConfig()
 	t0 := op.TimeNow()
 	deadline, _ := ctx.Deadline()
-	op.Logger.Info(
-		"tlsHandshakeStart",
-		slog.Time("deadline", deadline),
-		slog.String("localAddr", safeconn.LocalAddr(conn.Value)),   // nil safe
-		slog.String("protocol", safeconn.Network(conn.Value)),      // nil safe
-		slog.String("remoteAddr", safeconn.RemoteAddr(conn.Value)), // nil safe
-		slog.Time("t", t0),
-		slog.String("tlsEngineName", op.Engine.Name()),
-		slog.String("tlsParrot", op.Engine.Parrot()),
-		slog.Any("tlsOfferedProtocols", config.NextProtos),
-		slog.String("tlsServerName", config.ServerName),
-		slog.Bool("tlsSkipVerify", config.InsecureSkipVerify),
-	)
+	logEnabled := op.Logger.Enabled(ctx, slog.LevelInfo)
+	if logEnabled {
+		op.Logger.Info(
+			"tlsHandshakeStart",
+			slog.Time("deadline", deadline),
+			slog.String("localAddr", safeconn.LocalAddr(conn.Value)),   // nil safe
+			slog.String("protocol", safeconn.Network(conn.Value)),      // nil safe
+			slog.String("remoteAddr", safeconn.RemoteAddr(conn.Value)), // nil safe
+			slog.Time("t", t0),
+			slog.String("tlsEngineName", op.Engine.Name()),
+			slog.String("tlsParrot", op.Engine.Parrot()),
+			slog.Any("tlsOfferedProtocols", config.NextProtos),
+			slog.String("tlsServerName", config.ServerName),
+			slog.Bool("tlsSkipVerify", config.InsecureSkipVerify),
+		)
+	}
 
 	// Do the TLS handshake.
 	var (
@@ -183,26 +186,28 @@ func (op *TLSHandshakeFunc) Call(ctx context.Context, conn Result[net.Conn]) Res
 	runtimex.Assert((tconn != nil && err == nil) || (tconn == nil && err != nil))
 
 	// Log after the handshake.
-	op.Logger.Info(
-		"tlsHandshakeDone",
-		slog.Time("deadline", deadline),
-		slog.Any("err", err),
-		slog.String("errClass", op.ErrClassifier.Classify(err)),
-		slog.String("localAddr", safeconn.LocalAddr(conn.Value)),   // nil safe
-		slog.String("protocol", safeconn.Network(conn.Value)),      // nil safe
-		slog.String("remoteAddr", safeconn.RemoteAddr(conn.Value)), // nil safe
-		slog.Time("t0", t0),
-		slog.Time("t", t),
-		slog.String("tlsCipherSuite", tls.CipherSuiteName(state.CipherSuite)),
-		slog.String("tlsEngineName", op.Engine.Name()),
-		slog.String("tlsParrot", op.Engine.Parrot()),
-		slog.String("tlsNegotiatedProtocol", state.NegotiatedProtocol),
-		slog.Any("tlsOfferedProtocols", config.NextProtos),
-		slog.Any("tlsPeerCerts", op.peerCerts(state, err)),
-		slog.String("tlsServerName", config.ServerName),
-		slog.Bool("tlsSkipVerify", config.InsecureSkipVerify),
-		slog.String("tlsVersion", tls.VersionName(state.Version)),
-	)
+	if logEnabled {
+		op.Logger.Info(
+			"tlsHandshakeDone",
+			slog.Time("deadline", deadline),
+			slog.Any("err", err),
+			slog.String("errClass", op.ErrClassifier.Classify(err)),
+			slog.String("localAddr", safeconn.LocalAddr(conn.Value)),   // nil safe
+			slog.String("protocol", safeconn.Network(conn.Value)),      // nil safe
+			slog.String("remoteAddr", safeconn.RemoteAddr(conn.Value)), // nil safe
+			slog.Time("t0", t0),
+			slog.Time("t", t),
+			slog.String("tlsCipherSuite", tls.CipherSuiteName(state.CipherSuite)),
+			slog.String("tlsEngineName", op.Engine.Name()),
+			slog.String("tlsParrot", op.Engine.Parrot()),
+			slog.String("tlsNegotiatedProtocol", state.NegotiatedProtocol),
+			slog.Any("tlsOfferedProtocols", config.NextProtos),
+			slog.Any("tlsPeerCerts", op.peerCerts(state, err)),
+			slog.String("tlsServerName", config.ServerName),
+			slog.Bool("tlsSkipVerify", config.InsecureSkipVerify),
+			slog.String("tlsVersion", tls.VersionName(state.Version)),
+		)
+	}
 
 	// Return the suitable result type.
 	return Result[TLSConn]{Err: err, Value: tconn}

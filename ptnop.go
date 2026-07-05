@@ -17,6 +17,7 @@ package ptnop
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/bassosimone/errclass"
@@ -126,16 +127,24 @@ func NewConfig() *Config {
 //
 //   - Debug for per-I/O events (read, write, set deadline)
 //
+// This package uses the Enabled method to determine whether to emit events at a given
+// log level and avoids unnecessary work when specific levels are disabled.
+//
 // The [*slog.Logger] type satisfies this interface.
 type SLogger interface {
 	Debug(msg string, args ...any)
+	Enabled(ctx context.Context, level slog.Level) bool
 	Info(msg string, args ...any)
 }
+
+var _ SLogger = &slog.Logger{}
 
 // DefaultSLogger returns the default [SLogger] to use.
 //
 // The default is a no-op logger that discards all output. This follows the
 // library convention of not writing to stdout/stderr unless explicitly configured.
+//
+// We also report all logging levels as disabled to avoid unnecessary work.
 //
 // Use a custom [*slog.Logger] for emitting logs.
 func DefaultSLogger() SLogger {
@@ -150,6 +159,11 @@ var _ SLogger = discardSLogger{}
 // Debug implements [SLogger].
 func (discardSLogger) Debug(msg string, args ...any) {
 	// nothing
+}
+
+// Enabled implements [SLogger].
+func (discardSLogger) Enabled(ctx context.Context, level slog.Level) bool {
+	return false
 }
 
 // Info implements [SLogger].
@@ -205,7 +219,7 @@ type Func[A, B any] interface {
 // FuncAdapter wraps a function as a [Func] implementation.
 //
 // Use this to create ad-hoc [Func] instances from closures when you need
-// custom behavior that doesn't fit the existing primitives.
+// custom behavior that does not fit the existing primitives.
 type FuncAdapter[A, B any] func(ctx context.Context, input Result[A]) Result[B]
 
 // Call implements [Func].

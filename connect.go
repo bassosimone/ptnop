@@ -105,13 +105,16 @@ func (op *ConnectFunc) Call(ctx context.Context, address Result[netip.AddrPort])
 	if address.Err == nil {
 		addrStr = address.Value.String()
 	}
-	op.Logger.Info(
-		"connectStart",
-		slog.Time("deadline", deadline),
-		slog.String("protocol", op.Network),
-		slog.String("remoteAddr", addrStr),
-		slog.Time("t", t0),
-	)
+	logEnabled := op.Logger.Enabled(ctx, slog.LevelInfo)
+	if logEnabled {
+		op.Logger.Info(
+			"connectStart",
+			slog.Time("deadline", deadline),
+			slog.String("protocol", op.Network),
+			slog.String("remoteAddr", addrStr),
+			slog.Time("t", t0),
+		)
+	}
 
 	// Attempt to dial the connection if possible.
 	var (
@@ -128,17 +131,19 @@ func (op *ConnectFunc) Call(ctx context.Context, address Result[netip.AddrPort])
 	runtimex.Assert((conn != nil && err == nil) || (conn == nil && err != nil))
 
 	// Log after the dial attempt.
-	op.Logger.Info(
-		"connectDone",
-		slog.Time("deadline", deadline),
-		slog.Any("err", err),
-		slog.String("errClass", op.ErrClassifier.Classify(err)),
-		slog.String("localAddr", safeconn.LocalAddr(conn)),
-		slog.String("protocol", op.Network),
-		slog.String("remoteAddr", addrStr),
-		slog.Time("t0", t0),
-		slog.Time("t", op.TimeNow()),
-	)
+	if logEnabled {
+		op.Logger.Info(
+			"connectDone",
+			slog.Time("deadline", deadline),
+			slog.Any("err", err),
+			slog.String("errClass", op.ErrClassifier.Classify(err)),
+			slog.String("localAddr", safeconn.LocalAddr(conn)),
+			slog.String("protocol", op.Network),
+			slog.String("remoteAddr", addrStr),
+			slog.Time("t0", t0),
+			slog.Time("t", op.TimeNow()),
+		)
+	}
 
 	// Return the suitable result type.
 	return Result[net.Conn]{Err: err, Value: conn}
