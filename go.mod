@@ -3,12 +3,12 @@ module github.com/bassosimone/ptnop
 go 1.26.4
 
 require (
-	github.com/bassosimone/errclass v0.0.0-20260823102002-b6487371e21a
-	github.com/bassosimone/netstub v0.0.0-20260824081603-d7a04e8d0511
-	github.com/bassosimone/runtimex v0.0.0-20260823103059-603841e26ca3
-	github.com/bassosimone/safeconn v0.0.0-20260825075154-716ecc55474d
-	github.com/bassosimone/slogstub v0.0.0-20260824082137-49331f5eac15
-	github.com/bassosimone/tlsstub v0.0.0-20260825075958-3bae23485ad2
+	github.com/bassosimone/errclass v0.0.0-20260828073715-fc855052d7a1
+	github.com/bassosimone/netstub v0.0.0-20260828082500-583e8874b802
+	github.com/bassosimone/runtimex v0.0.0-20260828074549-6e2e561f98d1
+	github.com/bassosimone/safeconn v0.0.0-20260828084738-4fe9eb52c89a
+	github.com/bassosimone/slogstub v0.0.0-20260828082731-94119708cc2f
+	github.com/bassosimone/tlsstub v0.0.0-20260828085009-43197e23021b
 	github.com/stretchr/testify v1.12.1
 )
 
