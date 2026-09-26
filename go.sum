@@ -6,6 +6,8 @@ github.com/bassosimone/runtimex v0.0.0-20260920130843-b72080259a60 h1:1bLVzSLp4k
 github.com/bassosimone/runtimex v0.0.0-20260920130843-b72080259a60/go.mod h1:2aW76skIZNS7ljOpIqU3eARVLmtb0AG/Gab4aegSkTA=
 github.com/bassosimone/safeconn v0.0.0-20260920135006-cffeabe7db91 h1:ixqveFs2zHjT1JCfQfcEbu69E5ZQj/Q/Ny0yLCUur0g=
 github.com/bassosimone/safeconn v0.0.0-20260920135006-cffeabe7db91/go.mod h1:LV1qv/aOilG+wxAHxOo1vivnoc/yAq/IfyQKDe8rgJg=
+github.com/bassosimone/tlsstub v0.0.0-20260920135123-d06c7fcbe2bc h1:4HXRR+yBlfOjlzY1bEsNEyWszDolGVK/dBWNXHI4qBg=
+github.com/bassosimone/tlsstub v0.0.0-20260920135123-d06c7fcbe2bc/go.mod h1:xwxc0CgBPR2AKGsUD5BJlM8BlYl2aCSJ0wF0nnruR9c=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 go.yaml.in/yaml/v3 v3.0.5 h1:N6y/pJk8buWs9NY5ERU2HSMfm+IuD/OtfdAnq6kESPw=

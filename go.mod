@@ -7,6 +7,7 @@ require (
 	github.com/bassosimone/netstub v0.0.0-20260926162842-f4cd61f87c79
 	github.com/bassosimone/runtimex v0.0.0-20260920130843-b72080259a60
 	github.com/bassosimone/safeconn v0.0.0-20260920135006-cffeabe7db91
+	github.com/bassosimone/tlsstub v0.0.0-20260920135123-d06c7fcbe2bc
 	github.com/stretchr/testify v1.12.1
 )
 
