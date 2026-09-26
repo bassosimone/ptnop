@@ -1,5 +1,11 @@
 github.com/bassosimone/errclass v0.0.0-20260920130548-7c6065cbf578 h1:UoYlX85YbBKlEmW0h25FPtvkVKdB5D9DLT72wvcy6Cc=
 github.com/bassosimone/errclass v0.0.0-20260920130548-7c6065cbf578/go.mod h1:sQxfND7rwso9FT9cexdBsWTmRa367CyhWTixnnV+Yw4=
+github.com/bassosimone/netstub v0.0.0-20260926162842-f4cd61f87c79 h1:gHFG8WJIksJy4IOxaJ0jzlnD+WpXs2vVOKo/DwoYihU=
+github.com/bassosimone/netstub v0.0.0-20260926162842-f4cd61f87c79/go.mod h1:P0cdjjIO93lcACVZ7hsuBIMAAqkXbzrBUgDy80A8r0Y=
+github.com/bassosimone/runtimex v0.0.0-20260920130843-b72080259a60 h1:1bLVzSLp4k8NCkLkHYE/TLRf58gSBV/Py4pNXJDAhGs=
+github.com/bassosimone/runtimex v0.0.0-20260920130843-b72080259a60/go.mod h1:2aW76skIZNS7ljOpIqU3eARVLmtb0AG/Gab4aegSkTA=
+github.com/bassosimone/safeconn v0.0.0-20260920135006-cffeabe7db91 h1:ixqveFs2zHjT1JCfQfcEbu69E5ZQj/Q/Ny0yLCUur0g=
+github.com/bassosimone/safeconn v0.0.0-20260920135006-cffeabe7db91/go.mod h1:LV1qv/aOilG+wxAHxOo1vivnoc/yAq/IfyQKDe8rgJg=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 go.yaml.in/yaml/v3 v3.0.5 h1:N6y/pJk8buWs9NY5ERU2HSMfm+IuD/OtfdAnq6kESPw=
