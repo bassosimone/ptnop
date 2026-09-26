@@ -3,6 +3,7 @@ module github.com/bassosimone/ptnop
 go 1.27.1
 
 require (
+	github.com/bassosimone/deferexit v0.0.0-20260920130353-344b1a39a3c4
 	github.com/bassosimone/dnscodec v0.0.0-20260920134140-e91c2ba33014
 	github.com/bassosimone/dnsoverhttps v0.0.0-20260920135418-3d304980c0a4
 	github.com/bassosimone/dnsoverstream v0.0.0-20260920135504-fac4d723fdbc
@@ -15,13 +16,18 @@ require (
 	github.com/bassosimone/safeconn v0.0.0-20260920135006-cffeabe7db91
 	github.com/bassosimone/sud v0.0.0-20260920130940-9f9736245d9d
 	github.com/bassosimone/tlsstub v0.0.0-20260920135123-d06c7fcbe2bc
-	github.com/google/uuid v1.6.0
+	github.com/bassosimone/vclip v0.0.0-20260925191241-1b1636f3b461
+	github.com/bassosimone/vflag v0.0.0-20260920135752-105f5b45ed82
 	github.com/miekg/dns v1.1.73
 	github.com/stretchr/testify v1.12.1
 )
 
 require (
+	github.com/bassosimone/flagparser v0.0.0-20260920134238-622c743feb8a // indirect
+	github.com/bassosimone/flagscanner v0.0.0-20260920130738-11546ab7262e // indirect
 	github.com/bassosimone/iox v0.0.0-20260920134829-97daf4c1a668 // indirect
+	github.com/bassosimone/must v0.0.0-20260920134909-0e0911cde875 // indirect
+	github.com/bassosimone/textwrap v0.0.0-20260920134026-7a0b23602d17 // indirect
 	github.com/quic-go/quic-go v0.62.0 // indirect
 	github.com/rogpeppe/go-internal v1.16.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
