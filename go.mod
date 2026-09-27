@@ -6,9 +6,11 @@ require (
 	github.com/bassosimone/dnscodec v0.0.0-20260920134140-e91c2ba33014
 	github.com/bassosimone/dnsoverhttps v0.0.0-20260920135418-3d304980c0a4
 	github.com/bassosimone/dnsoverstream v0.0.0-20260920135504-fac4d723fdbc
+	github.com/bassosimone/dnstest v0.0.0-20260920134733-9b5a6cabb432
 	github.com/bassosimone/errclass v0.0.0-20260920130548-7c6065cbf578
 	github.com/bassosimone/minest v0.0.0-20260920135554-8479929affc1
 	github.com/bassosimone/netstub v0.0.0-20260926162842-f4cd61f87c79
+	github.com/bassosimone/pkitest v0.0.0-20260920134538-44dc9051d09a
 	github.com/bassosimone/runtimex v0.0.0-20260920130843-b72080259a60
 	github.com/bassosimone/safeconn v0.0.0-20260920135006-cffeabe7db91
 	github.com/bassosimone/sud v0.0.0-20260920130940-9f9736245d9d
@@ -20,6 +22,7 @@ require (
 require (
 	github.com/bassosimone/iox v0.0.0-20260920134829-97daf4c1a668 // indirect
 	github.com/quic-go/quic-go v0.62.0 // indirect
+	github.com/rogpeppe/go-internal v1.16.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/net v0.59.0 // indirect

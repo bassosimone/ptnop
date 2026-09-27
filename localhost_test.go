@@ -8,13 +8,20 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"net/netip"
 	"net/url"
+	"slices"
 	"testing"
+	"time"
 
+	"github.com/bassosimone/dnscodec"
+	"github.com/bassosimone/dnstest"
+	"github.com/bassosimone/pkitest"
 	"github.com/bassosimone/ptnop"
+	"github.com/miekg/dns"
 	"github.com/stretchr/testify/require"
 )
 
@@ -137,4 +144,162 @@ func TestLocalhost_httpsServer(t *testing.T) {
 			require.Equal(t, []byte("Hello, world!\n"), respBody)
 		})
 	}
+}
+
+func TestLocalhost_dnsOverUDP(t *testing.T) {
+	// 1. create server
+	hconfig := dnstest.NewHandlerConfig()
+	hconfig.AddNetipAddr("dns.google", netip.MustParseAddr("8.8.8.8"))
+	hconfig.AddNetipAddr("dns.google", netip.MustParseAddr("8.8.4.4"))
+	server := dnstest.MustNewUDPServer(&net.ListenConfig{}, "127.0.0.1:0", dnstest.NewHandler(hconfig))
+	defer server.Close()
+	endpoint, err := netip.ParseAddrPort(server.Address())
+	require.Nil(t, err)
+
+	// 2. create pipeline
+	cfg := ptnop.NewConfig()
+	pipeline := ptnop.Compose2(
+		ptnop.NewConnectFunc(cfg, "udp"),
+		ptnop.NewDNSOverUDPConnFunc(cfg),
+	)
+
+	// 3. execute pipeline
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	dnsConn := pipeline.Call(ctx, endpoint)
+	defer dnsConn.Close()
+
+	// 4. use the returned conn
+	resp, err := dnsConn.Exchange(ctx, dnscodec.NewQuery("dns.google", dns.TypeA))
+	require.Nil(t, err)
+	addrs, err := resp.RecordsA()
+	require.Nil(t, err)
+	slices.Sort(addrs)
+	require.Equal(t, []string{"8.8.4.4", "8.8.8.8"}, addrs)
+}
+
+func TestLocalhost_dnsOverTCP(t *testing.T) {
+	// 1. create server
+	hconfig := dnstest.NewHandlerConfig()
+	hconfig.AddNetipAddr("dns.google", netip.MustParseAddr("8.8.8.8"))
+	hconfig.AddNetipAddr("dns.google", netip.MustParseAddr("8.8.4.4"))
+	server := dnstest.MustNewTCPServer(&net.ListenConfig{}, "127.0.0.1:0", dnstest.NewHandler(hconfig))
+	defer server.Close()
+	endpoint, err := netip.ParseAddrPort(server.Address())
+	require.Nil(t, err)
+
+	// 2. create pipeline
+	cfg := ptnop.NewConfig()
+	pipeline := ptnop.Compose2(
+		ptnop.NewConnectFunc(cfg, "tcp"),
+		ptnop.NewDNSOverTCPConnFunc(cfg),
+	)
+
+	// 3. execute pipeline
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	dnsConn := pipeline.Call(ctx, endpoint)
+	defer dnsConn.Close()
+
+	// 4. use the returned conn
+	resp, err := dnsConn.Exchange(ctx, dnscodec.NewQuery("dns.google", dns.TypeA))
+	require.Nil(t, err)
+	addrs, err := resp.RecordsA()
+	require.Nil(t, err)
+	slices.Sort(addrs)
+	require.Equal(t, []string{"8.8.4.4", "8.8.8.8"}, addrs)
+}
+
+func TestLocalhost_dnsOverTLS(t *testing.T) {
+	// 1. create server
+	hconfig := dnstest.NewHandlerConfig()
+	hconfig.AddNetipAddr("dns.google", netip.MustParseAddr("8.8.8.8"))
+	hconfig.AddNetipAddr("dns.google", netip.MustParseAddr("8.8.4.4"))
+	pki := pkitest.MustNewPKI("testdata")
+	cert := pki.MustNewCert(&pkitest.SelfSignedCertConfig{
+		CommonName:   "dns.example.com",
+		DNSNames:     []string{"dns.example.com"},
+		Organization: []string{"Example"},
+	})
+	server := dnstest.MustNewTLSServer(&net.ListenConfig{}, "127.0.0.1:0", cert, dnstest.NewHandler(hconfig))
+	defer server.Close()
+	endpoint, err := netip.ParseAddrPort(server.Address())
+	require.Nil(t, err)
+
+	tlsConfig := &tls.Config{
+		NextProtos: []string{"dot"},
+		RootCAs:    pki.CertPool(),
+		ServerName: "dns.example.com",
+	}
+
+	// 2. create pipeline
+	cfg := ptnop.NewConfig()
+	pipeline := ptnop.Compose3(
+		ptnop.NewConnectFunc(cfg, "tcp"),
+		ptnop.NewTLSHandshakeFunc(cfg, tlsConfig),
+		ptnop.NewDNSOverTLSConnFunc(cfg),
+	)
+
+	// 3. execute pipeline
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	dnsConn := pipeline.Call(ctx, endpoint)
+	defer dnsConn.Close()
+
+	// 4. use the returned conn
+	resp, err := dnsConn.Exchange(ctx, dnscodec.NewQuery("dns.google", dns.TypeA))
+	require.Nil(t, err)
+	addrs, err := resp.RecordsA()
+	require.Nil(t, err)
+	slices.Sort(addrs)
+	require.Equal(t, []string{"8.8.4.4", "8.8.8.8"}, addrs)
+}
+
+func TestLocalhost_dnsOverHTTPS(t *testing.T) {
+	// 1. create server
+	hconfig := dnstest.NewHandlerConfig()
+	hconfig.AddNetipAddr("dns.google", netip.MustParseAddr("8.8.8.8"))
+	hconfig.AddNetipAddr("dns.google", netip.MustParseAddr("8.8.4.4"))
+	pki := pkitest.MustNewPKI("testdata")
+	cert := pki.MustNewCert(&pkitest.SelfSignedCertConfig{
+		CommonName:   "dns.example.com",
+		DNSNames:     []string{"dns.example.com"},
+		Organization: []string{"Example"},
+	})
+	server := dnstest.MustNewHTTPSServer(&net.ListenConfig{}, "127.0.0.1:0", cert, dnstest.NewHandler(hconfig))
+	defer server.Close()
+	parsedURL, err := url.Parse(server.URL())
+	require.NotNil(t, parsedURL)
+	require.Nil(t, err)
+	endpoint, err := netip.ParseAddrPort(parsedURL.Host)
+	require.Nil(t, err)
+
+	tlsConfig := &tls.Config{
+		NextProtos: []string{"h2", "http/1.1"},
+		RootCAs:    pki.CertPool(),
+		ServerName: "dns.example.com",
+	}
+
+	// 2. create pipeline
+	cfg := ptnop.NewConfig()
+	pipeline := ptnop.Compose4(
+		ptnop.NewConnectFunc(cfg, "tcp"),
+		ptnop.NewTLSHandshakeFunc(cfg, tlsConfig),
+		ptnop.NewHTTPConnFunc(cfg),
+		ptnop.NewDNSOverHTTPSConnFunc(cfg, server.URL()+"/dns-query"),
+	)
+
+	// 3. execute pipeline
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	dnsConn := pipeline.Call(ctx, endpoint)
+	defer dnsConn.Close()
+
+	// 4. use the returned conn
+	resp, err := dnsConn.Exchange(ctx, dnscodec.NewQuery("dns.google", dns.TypeA))
+	require.Nil(t, err)
+	addrs, err := resp.RecordsA()
+	require.Nil(t, err)
+	slices.Sort(addrs)
+	require.Equal(t, []string{"8.8.4.4", "8.8.8.8"}, addrs)
 }
