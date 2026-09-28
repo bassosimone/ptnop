@@ -6,7 +6,9 @@ import (
 	"context"
 	"errors"
 	"net"
+	"sync/atomic"
 	"testing"
+	"testing/synctest"
 
 	"github.com/bassosimone/netstub"
 	"github.com/stretchr/testify/assert"
@@ -48,4 +50,31 @@ func TestCancelWatchFunc_Call_success(t *testing.T) {
 	cancel()
 	<-ready
 	assert.True(t, called)
+}
+
+// Make sure closing the conn returned by [CancelWatchFunc.Call] unregisters the watcher.
+func TestCancelWatchFunc_Call_closeUnregisters(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		// 1. setup
+		var closeCount atomic.Int32
+		origConn := &netstub.FuncConn{
+			CloseFunc: func() error {
+				closeCount.Add(1)
+				return nil
+			},
+		}
+		input := Result[net.Conn]{V: origConn}
+		ctx, cancel := context.WithCancel(context.Background())
+		fx := NewCancelWatchFunc()
+
+		// 2. invoke: close, then cancel
+		output := fx.Call(ctx, input)
+		err := output.V.Close()
+		cancel()
+		synctest.Wait() // a still-registered watcher would have run by now
+
+		// 3. check
+		assert.NoError(t, err)
+		assert.Equal(t, int32(1), closeCount.Load())
+	})
 }
