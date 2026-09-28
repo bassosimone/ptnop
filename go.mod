@@ -15,6 +15,7 @@ require (
 	github.com/bassosimone/safeconn v0.0.0-20260920135006-cffeabe7db91
 	github.com/bassosimone/sud v0.0.0-20260920130940-9f9736245d9d
 	github.com/bassosimone/tlsstub v0.0.0-20260920135123-d06c7fcbe2bc
+	github.com/google/uuid v1.6.0
 	github.com/miekg/dns v1.1.73
 	github.com/stretchr/testify v1.12.1
 )

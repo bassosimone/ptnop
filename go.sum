@@ -28,6 +28,8 @@ github.com/bassosimone/sud v0.0.0-20260920130940-9f9736245d9d h1:lVue7QbJjqZX/cJ
 github.com/bassosimone/sud v0.0.0-20260920130940-9f9736245d9d/go.mod h1:rWgLB1knwP392RwXnPA0FOlfHmzPpLJD/1KrHg+ev1I=
 github.com/bassosimone/tlsstub v0.0.0-20260920135123-d06c7fcbe2bc h1:4HXRR+yBlfOjlzY1bEsNEyWszDolGVK/dBWNXHI4qBg=
 github.com/bassosimone/tlsstub v0.0.0-20260920135123-d06c7fcbe2bc/go.mod h1:xwxc0CgBPR2AKGsUD5BJlM8BlYl2aCSJ0wF0nnruR9c=
+github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
+github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/miekg/dns v1.1.73 h1:uhT8nJxmTrPJYClxVxTCX+CVn6qnzSiybRk72Z6DgrE=
 github.com/miekg/dns v1.1.73/go.mod h1:RW2Obtfd5NZHvOFe3zYG0W8koWOQtAzyHaLo8vASBuQ=
 github.com/quic-go/go-ossfuzz-seeds v0.1.0 h1:APacT+iIaNF6fd8AGEiN3bT/Jtkd2jz4v4TzM7MFjy0=
