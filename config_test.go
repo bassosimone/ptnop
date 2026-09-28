@@ -5,6 +5,7 @@ package ptnop
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"testing/synctest"
 	"time"
@@ -40,6 +41,10 @@ func TestDefaultErrClassifier(t *testing.T) {
 
 	// [ErrSkip]
 	got := ec.Classify(ErrSkip{errors.New("mocked")})
+	assert.Equal(t, "ESKIP", got)
+
+	// [ErrSkip] wrapped by a foreign layer
+	got = ec.Classify(fmt.Errorf("wrapped: %w", ErrSkip{errors.New("mocked")}))
 	assert.Equal(t, "ESKIP", got)
 
 	// [errclass.New]
