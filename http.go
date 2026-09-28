@@ -236,8 +236,11 @@ func (hc *HTTPConn) Close() error {
 //
 // Must not use if you use [*HTTPConn]: it automatically wraps the body itself.
 type HTTPBodyWrapper struct {
-	// body is the actual body.
-	body io.ReadCloser
+	// Body is the wrapped body.
+	//
+	// Must be public to allow callers to unwrap and opt-out of
+	// logging the body events if so they wish.
+	Body io.ReadCloser
 
 	// didRead tracks whether at least one Read happened.
 	didRead atomic.Bool
@@ -282,7 +285,7 @@ type HTTPBodyWrapper struct {
 // Must not use if you use [*HTTPConn]: it automatically wraps the body itself.
 func NewHTTPBodyWrapper(hc *HTTPConn, body io.ReadCloser) *HTTPBodyWrapper {
 	return &HTTPBodyWrapper{ // arrange for logging body events
-		body:      body,
+		Body:      body,
 		didRead:   atomic.Bool{},
 		errClass:  hc.ErrClassifier,
 		laddr:     hc.LocalAddr,
@@ -305,7 +308,7 @@ var _ io.ReadCloser = &HTTPBodyWrapper{}
 // observed when reading, which might indicate a network filtering issue.
 func (b *HTTPBodyWrapper) Close() (err error) {
 	b.closeOnce.Do(func() {
-		err = b.body.Close()
+		err = b.Body.Close()
 		if b.didRead.Load() { // acquire: t0 is visible if this returns true
 
 			b.readErrMu.Lock()
@@ -343,7 +346,7 @@ func (b *HTTPBodyWrapper) Read(buffer []byte) (int, error) {
 	})
 
 	// 2. execute the actual read operation
-	count, err := b.body.Read(buffer)
+	count, err := b.Body.Read(buffer)
 
 	// 3. report protocol errors to the caller but mask `io.EOF` because it's the
 	// sentinel used to indicate EOF and emitting it is useless
