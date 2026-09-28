@@ -255,6 +255,12 @@ type HTTPBodyWrapper struct {
 	// raddr is the remote address.
 	raddr string
 
+	// readErr is the saved body-reading error.
+	readErr error
+
+	// readErrMu protects readErr.
+	readErrMu sync.Mutex
+
 	// readOnce ensures we log httpBodyStreamStart only once.
 	readOnce sync.Once
 
@@ -278,6 +284,8 @@ func NewHTTPBodyWrapper(hc *HTTPConn, body io.ReadCloser) *HTTPBodyWrapper {
 		protocol:  hc.Proto,
 		raddr:     hc.RemoteAddr,
 		readOnce:  sync.Once{},
+		readErr:   nil,
+		readErrMu: sync.Mutex{},
 		t0:        time.Time{}, // set later when we start reading the body
 		timeNow:   hc.TimeNow,
 	}
@@ -285,24 +293,22 @@ func NewHTTPBodyWrapper(hc *HTTPConn, body io.ReadCloser) *HTTPBodyWrapper {
 
 var _ io.ReadCloser = &HTTPBodyWrapper{}
 
+// Close closes the underlying body emitting `httpBodyStreamDone` if we did ever
+// attempt reading from the body. In such a case, the event error is the last error
+// observed when reading, which might indicate a network filtering issue.
 func (b *HTTPBodyWrapper) Close() (err error) {
 	b.closeOnce.Do(func() {
 		err = b.body.Close()
 		if b.didRead.Load() { // acquire: t0 is visible if this returns true
-			if err != nil {
-				b.slogger.Info(
-					"httpBodyStreamCloseError",
-					slog.Any("err", err),
-					slog.String("errClass", b.errClass.Classify(err)),
-					slog.String("localAddr", b.laddr),
-					slog.String("protocol", b.protocol),
-					slog.String("remoteAddr", b.raddr),
-					slog.Time("t", b.timeNow.Get()),
-				)
-			}
+
+			b.readErrMu.Lock()
+			readErr := b.readErr
+			b.readErrMu.Unlock()
 
 			b.slogger.Info(
 				"httpBodyStreamDone",
+				slog.Any("err", readErr),
+				slog.String("errClass", b.errClass.Classify(readErr)),
 				slog.String("localAddr", b.laddr),
 				slog.String("protocol", b.protocol),
 				slog.String("remoteAddr", b.raddr),
@@ -314,6 +320,7 @@ func (b *HTTPBodyWrapper) Close() (err error) {
 	return
 }
 
+// Read reads a chunk of the body and emits `httpBodyStreamStart` on the first read.
 func (b *HTTPBodyWrapper) Read(buffer []byte) (int, error) {
 	// 1. log once when we do the first read
 	b.readOnce.Do(func() {
@@ -334,15 +341,9 @@ func (b *HTTPBodyWrapper) Read(buffer []byte) (int, error) {
 	// 3. report protocol errors to the caller but mask `io.EOF` because it's the
 	// sentinel used to indicate EOF and emitting it is useless
 	if err != nil && !errors.Is(err, io.EOF) {
-		b.slogger.Info(
-			"httpBodyStreamReadError",
-			slog.Any("err", err),
-			slog.String("errClass", b.errClass.Classify(err)),
-			slog.String("localAddr", b.laddr),
-			slog.String("protocol", b.protocol),
-			slog.String("remoteAddr", b.raddr),
-			slog.Time("t", b.timeNow.Get()),
-		)
+		b.readErrMu.Lock()
+		b.readErr = err
+		b.readErrMu.Unlock()
 	}
 
 	// 4. return the results

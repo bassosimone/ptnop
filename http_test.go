@@ -432,56 +432,6 @@ func TestHTTPBodyWrapper(t *testing.T) {
 	// mockErr is the err mock that we use
 	mockErr := errors.New("mocked")
 
-	// expected events to be assembled depending on needs
-	bodyStreamStart := slogSimpleRecord{
-		Level: "info",
-		Msg:   "httpBodyStreamStart",
-		Attrs: []string{
-			"localAddr=10.0.0.1:19774",
-			"protocol=tcp",
-			"remoteAddr=10.0.0.2:80",
-			"t=2026-01-01 00:00:00 +0000 UTC",
-		},
-	}
-
-	bodyStreamReadError := slogSimpleRecord{
-		Level: "info",
-		Msg:   "httpBodyStreamReadError",
-		Attrs: []string{
-			"err=mocked",
-			"errClass=EGENERIC",
-			"localAddr=10.0.0.1:19774",
-			"protocol=tcp",
-			"remoteAddr=10.0.0.2:80",
-			"t=2026-01-01 00:00:00 +0000 UTC",
-		},
-	}
-
-	bodyStreamCloseError := slogSimpleRecord{
-		Level: "info",
-		Msg:   "httpBodyStreamCloseError",
-		Attrs: []string{
-			"err=mocked",
-			"errClass=EGENERIC",
-			"localAddr=10.0.0.1:19774",
-			"protocol=tcp",
-			"remoteAddr=10.0.0.2:80",
-			"t=2026-01-01 00:00:00 +0000 UTC",
-		},
-	}
-
-	bodyStreamDone := slogSimpleRecord{
-		Level: "info",
-		Msg:   "httpBodyStreamDone",
-		Attrs: []string{
-			"localAddr=10.0.0.1:19774",
-			"protocol=tcp",
-			"remoteAddr=10.0.0.2:80",
-			"t=2026-01-01 00:00:00 +0000 UTC",
-			"t0=2026-01-01 00:00:00 +0000 UTC",
-		},
-	}
-
 	// We use test cases to test all the code paths.
 	type testcase struct {
 		// name is the test case name
@@ -494,7 +444,8 @@ func TestHTTPBodyWrapper(t *testing.T) {
 		expectData     []byte
 		expectReadErr  error
 		expectCloseErr error
-		expectEvs      []slogSimpleRecord
+		expectErr      string
+		expectClass    string
 	}
 
 	cases := []testcase{
@@ -504,10 +455,8 @@ func TestHTTPBodyWrapper(t *testing.T) {
 			expectData:     []byte("Kampai!"),
 			expectReadErr:  nil,
 			expectCloseErr: nil,
-			expectEvs: []slogSimpleRecord{
-				bodyStreamStart,
-				bodyStreamDone,
-			},
+			expectErr:      "<nil>",
+			expectClass:    "",
 		},
 		{
 			name: "read error",
@@ -522,11 +471,8 @@ func TestHTTPBodyWrapper(t *testing.T) {
 			expectData:     []byte{},
 			expectReadErr:  mockErr,
 			expectCloseErr: nil,
-			expectEvs: []slogSimpleRecord{
-				bodyStreamStart,
-				bodyStreamReadError,
-				bodyStreamDone,
-			},
+			expectErr:      "mocked",
+			expectClass:    "EGENERIC",
 		},
 		{
 			name: "close error",
@@ -541,11 +487,8 @@ func TestHTTPBodyWrapper(t *testing.T) {
 			expectData:     []byte{},
 			expectReadErr:  nil,
 			expectCloseErr: mockErr,
-			expectEvs: []slogSimpleRecord{
-				bodyStreamStart,
-				bodyStreamCloseError,
-				bodyStreamDone,
-			},
+			expectErr:      "<nil>",
+			expectClass:    "",
 		},
 		{
 			name: "read and close error",
@@ -560,12 +503,8 @@ func TestHTTPBodyWrapper(t *testing.T) {
 			expectData:     []byte{},
 			expectReadErr:  mockErr,
 			expectCloseErr: mockErr,
-			expectEvs: []slogSimpleRecord{
-				bodyStreamStart,
-				bodyStreamReadError,
-				bodyStreamCloseError,
-				bodyStreamDone,
-			},
+			expectErr:      "mocked",
+			expectClass:    "EGENERIC",
 		},
 	}
 
@@ -593,7 +532,33 @@ func TestHTTPBodyWrapper(t *testing.T) {
 			assert.Equal(t, tc.expectCloseErr, closeErr)
 			assert.Equal(t, tc.expectReadErr, readErr)
 
-			assert.Equal(t, tc.expectEvs, logHelper.Got)
+			expected := []slogSimpleRecord{
+				{
+					Level: "info",
+					Msg:   "httpBodyStreamStart",
+					Attrs: []string{
+						"localAddr=10.0.0.1:19774",
+						"protocol=tcp",
+						"remoteAddr=10.0.0.2:80",
+						"t=2026-01-01 00:00:00 +0000 UTC",
+					},
+				},
+				{
+					Level: "info",
+					Msg:   "httpBodyStreamDone",
+					Attrs: []string{
+						"err=" + tc.expectErr,
+						"errClass=" + tc.expectClass,
+						"localAddr=10.0.0.1:19774",
+						"protocol=tcp",
+						"remoteAddr=10.0.0.2:80",
+						"t=2026-01-01 00:00:00 +0000 UTC",
+						"t0=2026-01-01 00:00:00 +0000 UTC",
+					},
+				},
+			}
+
+			assert.Equal(t, expected, logHelper.Got)
 		})
 	}
 }
