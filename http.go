@@ -161,6 +161,8 @@ type HTTPConn struct {
 }
 
 // RoundTrip implements [http.RoundTripper] as implemented by [*http.ClientConn.RoundTrip].
+//
+// On success the [*http.Response] body is an [*HTTPBodyWrapper] emitting logs.
 func (hc *HTTPConn) RoundTrip(req *http.Request) (*http.Response, error) {
 	// 1. log before the operation
 	t0 := hc.TimeNow.Get()
@@ -191,6 +193,7 @@ func (hc *HTTPConn) RoundTrip(req *http.Request) (*http.Response, error) {
 		if err == nil {
 			statusCode = resp.StatusCode
 			headers = resp.Header
+			resp.Body = NewHTTPBodyWrapper(hc, resp.Body)
 		}
 	} else {
 		err = ErrSkip{err}
@@ -230,6 +233,8 @@ func (hc *HTTPConn) Close() error {
 // when we start and when we finish reading the body.
 //
 // Use [NewHTTPBodyWrapper] to create a new instance.
+//
+// Must not use if you use [*HTTPConn]: it automatically wraps the body itself.
 type HTTPBodyWrapper struct {
 	// body is the actual body.
 	body io.ReadCloser
@@ -273,6 +278,8 @@ type HTTPBodyWrapper struct {
 
 // NewHTTPBodyWrapper creates an [*HTTPBodyWrapper] using the [*HTTPConn] and the
 // given [io.ReadCloser] to initialize all [*HTTPBodyWrapper] fields.
+//
+// Must not use if you use [*HTTPConn]: it automatically wraps the body itself.
 func NewHTTPBodyWrapper(hc *HTTPConn, body io.ReadCloser) *HTTPBodyWrapper {
 	return &HTTPBodyWrapper{ // arrange for logging body events
 		body:      body,

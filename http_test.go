@@ -331,6 +331,11 @@ func TestHTTPConn_RoundTrip(t *testing.T) {
 			require.Equal(t, tc.expectErr, err)
 			require.Equal(t, tc.expectResp, resp)
 
+			if resp != nil {
+				_, ok := resp.Body.(*HTTPBodyWrapper)
+				require.True(t, ok)
+			}
+
 			expect := []slogSimpleRecord{{
 				Level: "info",
 				Msg:   "httpRoundTripStart",
