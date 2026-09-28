@@ -67,6 +67,18 @@ func TestTLSHandshakeFunc_Call_prevStageFailure(t *testing.T) {
 	defer cancel()
 	input := Result[net.Conn]{Err: mocked}
 	fx := NewTLSHandshakeFunc(cfg, tlsConfig)
+	fx.Engine = &tlsstub.FuncTLSEngine[TLSConn]{
+		ClientFunc: func(conn net.Conn, config *tls.Config) TLSConn {
+			t.Fatal("the engine must not be invoked on skip")
+			return nil
+		},
+		NameFunc: func() string {
+			return "custom"
+		},
+		ParrotFunc: func() string {
+			return ""
+		},
+	}
 
 	// 2. invoke
 	result := fx.Call(ctx, input)
@@ -87,7 +99,7 @@ func TestTLSHandshakeFunc_Call_prevStageFailure(t *testing.T) {
 			"protocol=",
 			"remoteAddr=",
 			"t=2026-01-01 00:00:00 +0000 UTC",
-			"tlsEngineName=stdlib",
+			"tlsEngineName=custom",
 			"tlsParrot=",
 			"tlsOfferedProtocols=[h2 http/1.1]",
 			"tlsServerName=en.wikipedia.org",
@@ -106,7 +118,7 @@ func TestTLSHandshakeFunc_Call_prevStageFailure(t *testing.T) {
 			"t=2026-01-01 00:00:00 +0000 UTC",
 			"t0=2026-01-01 00:00:00 +0000 UTC",
 			"tlsCipherSuite=0x0000",
-			"tlsEngineName=stdlib",
+			"tlsEngineName=custom",
 			"tlsParrot=",
 			"tlsNegotiatedProtocol=",
 			"tlsOfferedProtocols=[h2 http/1.1]",
