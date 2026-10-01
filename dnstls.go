@@ -37,10 +37,12 @@ func NewDNSOverTLSConnFunc(cfg *Config) *DNSOverTLSConnFunc {
 	}
 }
 
-var _ Func[Result[net.Conn], *DNSOverTLSConn] = &DNSOverTLSConnFunc{}
+var _ Func[Result[net.Conn], DNSConn] = &DNSOverTLSConnFunc{}
 
-// Call wraps the TLSConn into a DNSOverTLSConn.
-func (op *DNSOverTLSConnFunc) Call(ctx context.Context, conn Result[net.Conn]) *DNSOverTLSConn {
+// Call transforms a [net.Conn] into an [DNSConn] thus allowing for DNS exchanges.
+//
+// The returned value is a [*DNSOverTLSConn].
+func (op *DNSOverTLSConnFunc) Call(ctx context.Context, conn Result[net.Conn]) DNSConn {
 	return &DNSOverTLSConn{
 		Conn:          conn,
 		ErrClassifier: op.ErrClassifier,

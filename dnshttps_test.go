@@ -40,7 +40,7 @@ func TestDNSOverHTTPSConnFunc_Call(t *testing.T) {
 	httpCc := &HTTPConn{}
 
 	// 2. invoke
-	dnsCc := fx.Call(context.Background(), httpCc)
+	dnsCc := fx.Call(context.Background(), httpCc).(*DNSOverHTTPSConn)
 
 	// 3. verify
 	assert.Same(t, fx.ErrClassifier, dnsCc.ErrClassifier)

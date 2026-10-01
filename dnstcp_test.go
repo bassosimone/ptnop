@@ -35,7 +35,7 @@ func TestDNSOverTCPCallFunc(t *testing.T) {
 	cfg := NewConfig()
 	fx := NewDNSOverTCPConnFunc(cfg)
 
-	output := fx.Call(context.Background(), input)
+	output := fx.Call(context.Background(), input).(*DNSOverTCPConn)
 
 	assert.NotNil(t, output)
 	assert.Equal(t, input, output.Conn)

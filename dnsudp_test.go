@@ -35,7 +35,7 @@ func TestDNSOverUDPCallFunc(t *testing.T) {
 	cfg := NewConfig()
 	fx := NewDNSOverUDPConnFunc(cfg)
 
-	output := fx.Call(context.Background(), input)
+	output := fx.Call(context.Background(), input).(*DNSOverUDPConn)
 
 	assert.NotNil(t, output)
 	assert.Equal(t, input, output.Conn)

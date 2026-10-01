@@ -39,10 +39,12 @@ func NewDNSOverHTTPSConnFunc(cfg *Config, targetURL string) *DNSOverHTTPSConnFun
 	}
 }
 
-var _ Func[*HTTPConn, *DNSOverHTTPSConn] = &DNSOverHTTPSConnFunc{}
+var _ Func[*HTTPConn, DNSConn] = &DNSOverHTTPSConnFunc{}
 
-// Call wraps the HTTPConn into a DNSOverHTTPSConn.
-func (op *DNSOverHTTPSConnFunc) Call(ctx context.Context, httpConn *HTTPConn) *DNSOverHTTPSConn {
+// Call transforms an [*HTTPConn] into a [DNSConn] thus allowing for DNS exchanges.
+//
+// The returned value is a [*DNSOverHTTPSConn].
+func (op *DNSOverHTTPSConnFunc) Call(ctx context.Context, httpConn *HTTPConn) DNSConn {
 	return &DNSOverHTTPSConn{
 		ErrClassifier: op.ErrClassifier,
 		HTTPConn:      httpConn,

@@ -37,10 +37,12 @@ func NewDNSOverUDPConnFunc(cfg *Config) *DNSOverUDPConnFunc {
 	}
 }
 
-var _ Func[Result[net.Conn], *DNSOverUDPConn] = &DNSOverUDPConnFunc{}
+var _ Func[Result[net.Conn], DNSConn] = &DNSOverUDPConnFunc{}
 
-// Call transforms a [net.Conn] into an [*DNSOverUDPConn] thus allowing for DNS exchanges.
-func (op *DNSOverUDPConnFunc) Call(ctx context.Context, conn Result[net.Conn]) *DNSOverUDPConn {
+// Call transforms a [net.Conn] into an [DNSConn] thus allowing for DNS exchanges.
+//
+// The returned value is a [*DNSOverUDPConn].
+func (op *DNSOverUDPConnFunc) Call(ctx context.Context, conn Result[net.Conn]) DNSConn {
 	return &DNSOverUDPConn{
 		Conn:          conn,
 		ErrClassifier: op.ErrClassifier,

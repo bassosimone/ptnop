@@ -12,7 +12,15 @@ import (
 	"log/slog"
 	"net"
 	"time"
+
+	"github.com/bassosimone/dnscodec"
 )
+
+// DNSConn is the conn returned by stages such as [*DNSOverUDPConnFunc].
+type DNSConn interface {
+	Close() error
+	Exchange(ctx context.Context, query *dnscodec.Query) (*dnscodec.Response, error)
+}
 
 // dnsUnusedDialer is a [Dialer] that panics if DialContext is called. Dialing should
 // not happen because we're using connections directly.
