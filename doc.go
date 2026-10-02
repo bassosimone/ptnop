@@ -67,6 +67,12 @@
 // have been made to send specific HTTP requests, versus, say, TLS handshakes
 // that were motivated by sending DNS-over-TLS requests.
 //
+// As a caveat, some I/O events (e.g. closeStart/Done and readDone
+// events) may be emitted after the code running the pipeline has returned
+// when using [net/http]. This happens because [net/http] manages the
+// conn in a background goroutine and closes it asynchronously. Thus, a tool
+// that exits when its pipelines are done might miss these events.
+//
 // To distinguish between the output of multiple pipelines, it is advised to
 // use [log/slog.Logger.With], so that each pipeline is bound to a unique
 // identifier (for example a UUIDv4 or a UUIDv7).
@@ -128,7 +134,7 @@
 //
 // # Lazy carriers
 //
-// The [*HTTPConn] and the DNS conn types carry the [Result]
+// The [*HTTPConn] and the [DNSConn] types carry the [Result]
 // inside them so that you notice the actual failure when
 // attempting to perform the related operation. That is, the
 // fact that [*HTTPConnFunc] always returns [*HTTPConn]
@@ -136,8 +142,8 @@
 // error, if any, is observed when calling the [*HTTPConn.RoundTrip]
 // method such that the related events may be emitted.
 //
-// Close on a lazy carrier whose [Result] holds an error is a no-op:
-// there is nothing to close.
+// Close on a lazy carrier whose [Result] holds an error is a
+// no-op: there is nothing to close.
 //
 // # HTTP body events
 //
