@@ -235,8 +235,8 @@ func TestDNSOverTCPConn_Exchange(t *testing.T) {
 					"deadline=2026-01-01 00:00:10 +0000 UTC",
 					"localAddr=" + safeconn.LocalAddr(conn.Conn.V), // nil safe
 					"protocol=" + safeconn.Network(conn.Conn.V),    // nil safe
-					"queryName=www.example.com",
-					"queryType=A",
+					"dnsQueryName=www.example.com",
+					"dnsQueryType=A",
 					"remoteAddr=" + safeconn.RemoteAddr(conn.Conn.V), // nil safe
 					"serverProtocol=tcp",
 					"t=2026-01-01 00:00:00 +0000 UTC",
@@ -254,8 +254,8 @@ func TestDNSOverTCPConn_Exchange(t *testing.T) {
 					"errClass=" + tc.expectLogClass,
 					"localAddr=" + safeconn.LocalAddr(conn.Conn.V), // nil safe
 					"protocol=" + safeconn.Network(conn.Conn.V),    // nil safe
-					"queryName=www.example.com",
-					"queryType=A",
+					"dnsQueryName=www.example.com",
+					"dnsQueryType=A",
 					"remoteAddr=" + safeconn.RemoteAddr(conn.Conn.V), // nil safe
 					"serverProtocol=tcp",
 					"t=2026-01-01 00:00:00 +0000 UTC",
