@@ -99,14 +99,19 @@ func (op *TLSHandshakeFunc) Call(ctx context.Context, input Result[net.Conn]) Re
 	config.Time = op.TimeNow.Get
 
 	// 3. log before performing the operation
+	var (
+		localAddr  = safeconn.LocalAddr(conn)  // nil safe
+		proto      = safeconn.Network(conn)    // nil safe
+		remoteAddr = safeconn.RemoteAddr(conn) // nil safe
+	)
 	t0 := op.TimeNow.Get()
 	deadline, _ := ctx.Deadline()
 	op.SLogger.Info(
 		"tlsHandshakeStart",
 		slog.Time("deadline", deadline),
-		slog.String("localAddr", safeconn.LocalAddr(conn)),   // nil safe
-		slog.String("protocol", safeconn.Network(conn)),      // nil safe
-		slog.String("remoteAddr", safeconn.RemoteAddr(conn)), // nil safe
+		slog.String("localAddr", localAddr),
+		slog.String("protocol", proto),
+		slog.String("remoteAddr", remoteAddr),
 		slog.Time("t", t0),
 		slog.String("tlsEngineName", op.Engine.Name()),
 		slog.String("tlsParrot", op.Engine.Parrot()),
@@ -141,9 +146,9 @@ func (op *TLSHandshakeFunc) Call(ctx context.Context, input Result[net.Conn]) Re
 		slog.Time("deadline", deadline),
 		slog.Any("err", err),
 		slog.String("errClass", op.ErrClassifier.Classify(err)),
-		slog.String("localAddr", safeconn.LocalAddr(conn)),   // nil safe
-		slog.String("protocol", safeconn.Network(conn)),      // nil safe
-		slog.String("remoteAddr", safeconn.RemoteAddr(conn)), // nil safe
+		slog.String("localAddr", localAddr),
+		slog.String("protocol", proto),
+		slog.String("remoteAddr", remoteAddr),
 		slog.Time("t", op.TimeNow.Get()),
 		slog.Time("t0", t0),
 		slog.String("tlsCipherSuite", tls.CipherSuiteName(state.CipherSuite)),

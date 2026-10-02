@@ -268,6 +268,9 @@ func TestTLSHandshakeFunc_Call_withValidConn(t *testing.T) {
 					return nil
 				},
 				LocalAddrFunc: func() net.Addr {
+					if closeCalled.Load() {
+						return nil
+					}
 					return &net.TCPAddr{
 						IP:   net.IPv4(10, 0, 0, 1),
 						Port: 19774,
@@ -275,6 +278,9 @@ func TestTLSHandshakeFunc_Call_withValidConn(t *testing.T) {
 					}
 				},
 				RemoteAddrFunc: func() net.Addr {
+					if closeCalled.Load() {
+						return nil
+					}
 					return &net.TCPAddr{
 						IP:   net.IPv4(10, 0, 0, 2),
 						Port: 443,
