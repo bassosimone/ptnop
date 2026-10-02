@@ -186,6 +186,7 @@ func (hc *HTTPConn) RoundTrip(req *http.Request) (*http.Response, error) {
 		headers    http.Header
 		resp       *http.Response
 		statusCode int
+		uncompr    bool
 	)
 	runtimex.Assert((cc != nil && err == nil) || (cc == nil && err != nil)) // invariant
 	if err == nil {
@@ -194,6 +195,7 @@ func (hc *HTTPConn) RoundTrip(req *http.Request) (*http.Response, error) {
 			statusCode = resp.StatusCode
 			headers = resp.Header
 			resp.Body = NewHTTPBodyWrapper(hc, resp.Body)
+			uncompr = resp.Uncompressed
 		}
 	} else {
 		err = ErrSkip{err}
@@ -209,6 +211,7 @@ func (hc *HTTPConn) RoundTrip(req *http.Request) (*http.Response, error) {
 		slog.String("httpMethod", req.Method),
 		slog.String("httpUrl", req.URL.String()),
 		slog.Any("httpRequestHeaders", req.Header),
+		slog.Bool("httpResponseBodyUncompressed", uncompr),
 		slog.Any("httpResponseHeaders", headers),
 		slog.Int("httpResponseStatusCode", statusCode),
 		slog.String("localAddr", hc.LocalAddr),

@@ -359,6 +359,7 @@ func TestHTTPConn_RoundTrip(t *testing.T) {
 					"httpMethod=GET",
 					"httpUrl=https://www.example.com/",
 					"httpRequestHeaders=map[User-Agent:[ptnop/0.1.0]]",
+					"httpResponseBodyUncompressed=false",
 					"httpResponseHeaders=" + tc.expectLogRespHdrs,
 					"httpResponseStatusCode=" + tc.expectLogRespCode,
 					"localAddr=10.0.0.1:19774",
