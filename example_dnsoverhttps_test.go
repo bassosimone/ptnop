@@ -41,7 +41,7 @@ func Example_dnsOverHTTPS() {
 	// Generate a span ID (UUIDv7) and attach it to the logger so that
 	// all log entries from this operation can be correlated.
 	spanID := uuid.Must(uuid.NewV7()).String()
-	logger = logger.With("spanID", spanID)
+	logger = logger.With("spanId", spanID)
 
 	// Create the shared configuration for ptnop operations.
 	cfg := ptnop.NewConfig()
