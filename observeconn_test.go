@@ -283,9 +283,9 @@ func Test_observedConn_ReadWrite(t *testing.T) {
 				Level: "debug",
 				Msg:   "readDone",
 				Attrs: []string{
-					"ioBytesCount=" + strconv.Itoa(tc.count),
 					"err=" + tc.expectErr,
 					"errClass=" + tc.expectErrClass,
+					"ioBytesCount=" + strconv.Itoa(tc.count),
 					"localAddr=10.0.0.1:19774",
 					"protocol=tcp",
 					"remoteAddr=10.0.0.2:80",
@@ -306,9 +306,9 @@ func Test_observedConn_ReadWrite(t *testing.T) {
 				Level: "debug",
 				Msg:   "writeDone",
 				Attrs: []string{
-					"ioBytesCount=" + strconv.Itoa(tc.count),
 					"err=" + tc.expectErr,
 					"errClass=" + tc.expectErrClass,
+					"ioBytesCount=" + strconv.Itoa(tc.count),
 					"localAddr=10.0.0.1:19774",
 					"protocol=tcp",
 					"remoteAddr=10.0.0.2:80",

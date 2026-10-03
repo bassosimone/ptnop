@@ -50,12 +50,12 @@ func (lc *dnsExchangeLogContext) LogStart(t0 time.Time, deadline time.Time) {
 	lc.SLogger.Info(
 		"dnsExchangeStart",
 		slog.Time("deadline", deadline),
-		slog.String("localAddr", lc.LocalAddr),
-		slog.String("protocol", lc.Protocol),
 		slog.String("dnsQueryName", lc.QueryName),
 		slog.String("dnsQueryType", lc.QueryType),
+		slog.String("dnsServerProtocol", lc.ServerProtocol),
+		slog.String("localAddr", lc.LocalAddr),
+		slog.String("protocol", lc.Protocol),
 		slog.String("remoteAddr", lc.RemoteAddr),
-		slog.String("serverProtocol", lc.ServerProtocol),
 		slog.Time("t", t0),
 	)
 }
@@ -65,14 +65,14 @@ func (lc *dnsExchangeLogContext) LogDone(t0 time.Time, deadline time.Time, err e
 	lc.SLogger.Info(
 		"dnsExchangeDone",
 		slog.Time("deadline", deadline),
+		slog.String("dnsQueryName", lc.QueryName),
+		slog.String("dnsQueryType", lc.QueryType),
+		slog.String("dnsServerProtocol", lc.ServerProtocol),
 		slog.Any("err", err),
 		slog.String("errClass", lc.ErrClassifier.Classify(err)),
 		slog.String("localAddr", lc.LocalAddr),
 		slog.String("protocol", lc.Protocol),
-		slog.String("dnsQueryName", lc.QueryName),
-		slog.String("dnsQueryType", lc.QueryType),
 		slog.String("remoteAddr", lc.RemoteAddr),
-		slog.String("serverProtocol", lc.ServerProtocol),
 		slog.Time("t", lc.TimeNow.Get()),
 		slog.Time("t0", t0),
 	)
@@ -86,8 +86,8 @@ func (lc *dnsExchangeLogContext) MakeQueryObserver(t0 time.Time, rqr *[]byte) fu
 	return func(rawQuery []byte) {
 		lc.SLogger.Info(
 			"dnsQuery",
-			slog.String("serverProtocol", lc.ServerProtocol),
 			slog.Any("dnsRawQuery", rawQuery),
+			slog.String("dnsServerProtocol", lc.ServerProtocol),
 			slog.String("localAddr", lc.LocalAddr),
 			slog.String("protocol", lc.Protocol),
 			slog.String("remoteAddr", lc.RemoteAddr),
@@ -105,14 +105,14 @@ func (lc *dnsExchangeLogContext) MakeResponseObserver(t0 time.Time, rqr *[]byte)
 	return func(rawResp []byte) {
 		lc.SLogger.Info(
 			"dnsResponse",
-			slog.String("serverProtocol", lc.ServerProtocol),
 			slog.Any("dnsRawQuery", *rqr),
+			slog.Any("dnsRawResponse", rawResp),
+			slog.String("dnsServerProtocol", lc.ServerProtocol),
 			slog.String("localAddr", lc.LocalAddr),
 			slog.String("protocol", lc.Protocol),
 			slog.String("remoteAddr", lc.RemoteAddr),
 			slog.Time("t", lc.TimeNow.Get()),
 			slog.Time("t0", t0),
-			slog.Any("dnsRawResponse", rawResp),
 		)
 	}
 }

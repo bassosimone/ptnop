@@ -118,9 +118,9 @@ func (c *observedConn) Read(buf []byte) (int, error) {
 	// 3. log after the operation
 	c.op.SLogger.Debug(
 		"readDone",
-		slog.Int("ioBytesCount", count),
 		slog.Any("err", err),
 		slog.String("errClass", c.op.ErrClassifier.Classify(err)),
+		slog.Int("ioBytesCount", count),
 		slog.String("localAddr", c.laddr),
 		slog.String("protocol", c.protocol),
 		slog.String("remoteAddr", c.raddr),
@@ -198,9 +198,9 @@ func (c *observedConn) Write(data []byte) (int, error) {
 	// 3. log after the operation
 	c.op.SLogger.Debug(
 		"writeDone",
-		slog.Int("ioBytesCount", count),
 		slog.Any("err", err),
 		slog.String("errClass", c.op.ErrClassifier.Classify(err)),
+		slog.Int("ioBytesCount", count),
 		slog.String("localAddr", c.laddr),
 		slog.String("protocol", c.protocol),
 		slog.String("remoteAddr", c.raddr),

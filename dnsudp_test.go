@@ -159,8 +159,8 @@ func TestDNSOverUDPConn_Exchange(t *testing.T) {
 				Level: "info",
 				Msg:   "dnsQuery",
 				Attrs: []string{
-					"serverProtocol=udp",
 					"dnsRawQuery=[0 171 1 0 0 1 0 0 0 0 0 1 3 119 119 119 7 101 120 97 109 112 108 101 3 99 111 109 0 0 1 0 1 0 0 41 4 208 0 0 0 0 0 0]",
+					"dnsServerProtocol=udp",
 					"localAddr=10.0.0.1:19774",
 					"protocol=udp",
 					"remoteAddr=10.0.0.2:53",
@@ -183,8 +183,8 @@ func TestDNSOverUDPConn_Exchange(t *testing.T) {
 				Level: "info",
 				Msg:   "dnsQuery",
 				Attrs: []string{
-					"serverProtocol=udp",
 					"dnsRawQuery=[0 171 1 0 0 1 0 0 0 0 0 1 3 119 119 119 7 101 120 97 109 112 108 101 3 99 111 109 0 0 1 0 1 0 0 41 4 208 0 0 0 0 0 0]",
+					"dnsServerProtocol=udp",
 					"localAddr=10.0.0.1:19774",
 					"protocol=udp",
 					"remoteAddr=10.0.0.2:53",
@@ -194,14 +194,14 @@ func TestDNSOverUDPConn_Exchange(t *testing.T) {
 				Level: "info",
 				Msg:   "dnsResponse",
 				Attrs: []string{
-					"serverProtocol=udp",
 					"dnsRawQuery=[0 171 1 0 0 1 0 0 0 0 0 1 3 119 119 119 7 101 120 97 109 112 108 101 3 99 111 109 0 0 1 0 1 0 0 41 4 208 0 0 0 0 0 0]",
+					"dnsRawResponse=[15 4 12]",
+					"dnsServerProtocol=udp",
 					"localAddr=10.0.0.1:19774",
 					"protocol=udp",
 					"remoteAddr=10.0.0.2:53",
 					"t=2026-01-01 00:00:00 +0000 UTC",
 					"t0=2026-01-01 00:00:00 +0000 UTC",
-					"dnsRawResponse=[15 4 12]",
 				},
 			}},
 		},
@@ -233,12 +233,12 @@ func TestDNSOverUDPConn_Exchange(t *testing.T) {
 				Msg:   "dnsExchangeStart",
 				Attrs: []string{
 					"deadline=2026-01-01 00:00:10 +0000 UTC",
-					"localAddr=" + safeconn.LocalAddr(conn.Conn.V), // nil safe
-					"protocol=" + safeconn.Network(conn.Conn.V),    // nil safe
 					"dnsQueryName=www.example.com",
 					"dnsQueryType=A",
+					"dnsServerProtocol=udp",
+					"localAddr=" + safeconn.LocalAddr(conn.Conn.V),   // nil safe
+					"protocol=" + safeconn.Network(conn.Conn.V),      // nil safe
 					"remoteAddr=" + safeconn.RemoteAddr(conn.Conn.V), // nil safe
-					"serverProtocol=udp",
 					"t=2026-01-01 00:00:00 +0000 UTC",
 				},
 			}
@@ -250,14 +250,14 @@ func TestDNSOverUDPConn_Exchange(t *testing.T) {
 				Msg:   "dnsExchangeDone",
 				Attrs: []string{
 					"deadline=2026-01-01 00:00:10 +0000 UTC",
-					"err=" + tc.expectLogErr,
-					"errClass=" + tc.expectLogClass,
-					"localAddr=" + safeconn.LocalAddr(conn.Conn.V), // nil safe
-					"protocol=" + safeconn.Network(conn.Conn.V),    // nil safe
 					"dnsQueryName=www.example.com",
 					"dnsQueryType=A",
+					"dnsServerProtocol=udp",
+					"err=" + tc.expectLogErr,
+					"errClass=" + tc.expectLogClass,
+					"localAddr=" + safeconn.LocalAddr(conn.Conn.V),   // nil safe
+					"protocol=" + safeconn.Network(conn.Conn.V),      // nil safe
 					"remoteAddr=" + safeconn.RemoteAddr(conn.Conn.V), // nil safe
-					"serverProtocol=udp",
 					"t=2026-01-01 00:00:00 +0000 UTC",
 					"t0=2026-01-01 00:00:00 +0000 UTC",
 				},
