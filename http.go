@@ -167,7 +167,7 @@ func (hc *HTTPConn) RoundTrip(req *http.Request) (*http.Response, error) {
 	// 1. log before the operation
 	t0 := hc.TimeNow.Get()
 	deadline, _ := req.Context().Deadline()
-	hc.SLogger.Info(
+	hc.SLogger.Debug(
 		"httpRoundTripStart",
 		slog.Time("deadline", deadline),
 		slog.Any("httpRequestHeaders", req.Header),
@@ -339,7 +339,7 @@ func (b *HTTPBodyWrapper) Read(buffer []byte) (int, error) {
 	b.readOnce.Do(func() {
 		b.t0 = b.timeNow.Get() // write t0 BEFORE the atomic store (release)
 		b.didRead.Store(true)  // release: makes t0 visible to Close
-		b.slogger.Info(
+		b.slogger.Debug(
 			"httpBodyStreamStart",
 			slog.String("localAddr", b.laddr),
 			slog.String("protocol", b.protocol),

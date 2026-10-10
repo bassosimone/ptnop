@@ -47,7 +47,7 @@ type dnsExchangeLogContext struct {
 
 // LogStart logs the start of a DNS exchange.
 func (lc *dnsExchangeLogContext) LogStart(t0 time.Time, deadline time.Time) {
-	lc.SLogger.Info(
+	lc.SLogger.Debug(
 		"dnsExchangeStart",
 		slog.Time("deadline", deadline),
 		slog.String("dnsQueryName", lc.QueryName),
@@ -84,7 +84,7 @@ func (lc *dnsExchangeLogContext) LogDone(t0 time.Time, deadline time.Time, err e
 // with the response observer.
 func (lc *dnsExchangeLogContext) MakeQueryObserver(t0 time.Time, rqr *[]byte) func([]byte) {
 	return func(rawQuery []byte) {
-		lc.SLogger.Info(
+		lc.SLogger.Debug(
 			"dnsQuery",
 			slog.Any("dnsRawQuery", rawQuery),
 			slog.String("dnsServerProtocol", lc.ServerProtocol),

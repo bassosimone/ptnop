@@ -32,8 +32,17 @@
 //  4. HTTP round trip events
 //  5. DNS exchange events
 //
-// All the above events are at [log/slog.LevelInfo] level except for I/O events
-// which are emitted at the [log/slog.LevelDebug] level.
+// With a logger configured to log at the [log/slog.LevelDebug] level one
+// gets all events. Restricting to [log/slog.LevelInfo] only yields the
+// events tailored for batch consumption of the event stream:
+//
+//   - closeDone
+//   - connectDone
+//   - dnsExchangeDone
+//   - dnsResponse
+//   - httpBodyStreamDone
+//   - httpRoundTripDone
+//   - tlsHandshakeDone
 //
 // Each pipeline stage that may fail returns a [Result] type containing either
 // the on-success value or an error with either-or semantics. Subsequent

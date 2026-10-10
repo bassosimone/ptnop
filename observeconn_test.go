@@ -150,7 +150,7 @@ func Test_observedConn_Close(t *testing.T) {
 
 			// 4. events
 			expect := []slogSimpleRecord{{
-				Level: "info",
+				Level: "debug",
 				Msg:   "closeStart",
 				Attrs: []string{
 					"localAddr=10.0.0.1:19774",

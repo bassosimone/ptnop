@@ -77,7 +77,7 @@ func (c *observedConn) Close() (err error) {
 	c.closeonce.Do(func() {
 		// 1. log before the operation
 		t0 := c.op.TimeNow.Get()
-		c.op.SLogger.Info(
+		c.op.SLogger.Debug(
 			"closeStart",
 			slog.String("localAddr", c.laddr),
 			slog.String("protocol", c.protocol),

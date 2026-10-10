@@ -118,7 +118,7 @@ func TestDNSOverHTTPSConn_Exchange(t *testing.T) {
 			expectLogErr:   "mocked",
 			expectLogClass: "ESKIP",
 			expectExtraRecords: []slogSimpleRecord{{
-				Level: "info",
+				Level: "debug",
 				Msg:   "dnsQuery",
 				Attrs: []string{
 					"dnsRawQuery=[0 0 1 0 0 1 0 0 0 0 0 1 3 119 119 119 7 101 120 97 109 112 108 101 3 99 111 109 0 0 1 0 1 0 0 41 16 0 0 0 128 0 0 84 0 12 0 80 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]",
@@ -149,7 +149,7 @@ func TestDNSOverHTTPSConn_Exchange(t *testing.T) {
 			expectLogErr:   "mocked",
 			expectLogClass: "EGENERIC",
 			expectExtraRecords: []slogSimpleRecord{{
-				Level: "info",
+				Level: "debug",
 				Msg:   "dnsQuery",
 				Attrs: []string{
 					"dnsRawQuery=[0 0 1 0 0 1 0 0 0 0 0 1 3 119 119 119 7 101 120 97 109 112 108 101 3 99 111 109 0 0 1 0 1 0 0 41 16 0 0 0 128 0 0 84 0 12 0 80 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]",
@@ -180,7 +180,7 @@ func TestDNSOverHTTPSConn_Exchange(t *testing.T) {
 			expectLogErr:   "server misbehaving",
 			expectLogClass: "EGENERIC",
 			expectExtraRecords: []slogSimpleRecord{{
-				Level: "info",
+				Level: "debug",
 				Msg:   "dnsQuery",
 				Attrs: []string{
 					"dnsRawQuery=[0 0 1 0 0 1 0 0 0 0 0 1 3 119 119 119 7 101 120 97 109 112 108 101 3 99 111 109 0 0 1 0 1 0 0 41 16 0 0 0 128 0 0 84 0 12 0 80 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]",
@@ -236,7 +236,7 @@ func TestDNSOverHTTPSConn_Exchange(t *testing.T) {
 			assert.NotNil(t, err)
 
 			dnsExchangeStart := slogSimpleRecord{
-				Level: "info",
+				Level: "debug",
 				Msg:   "dnsExchangeStart",
 				Attrs: []string{
 					"deadline=0001-01-01 00:00:00 +0000 UTC",

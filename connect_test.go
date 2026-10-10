@@ -171,7 +171,7 @@ func TestConnectFunc_Call(t *testing.T) {
 			tc.checkResult(t, result.V, result.Err)
 
 			expect := []slogSimpleRecord{{
-				Level: "info",
+				Level: "debug",
 				Msg:   "connectStart",
 				Attrs: []string{
 					"deadline=2026-01-01 00:00:10 +0000 UTC",

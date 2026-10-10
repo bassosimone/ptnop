@@ -106,7 +106,7 @@ func (op *TLSHandshakeFunc) Call(ctx context.Context, input Result[net.Conn]) Re
 	)
 	t0 := op.TimeNow.Get()
 	deadline, _ := ctx.Deadline()
-	op.SLogger.Info(
+	op.SLogger.Debug(
 		"tlsHandshakeStart",
 		slog.Time("deadline", deadline),
 		slog.String("localAddr", localAddr),

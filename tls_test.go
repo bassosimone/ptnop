@@ -91,7 +91,7 @@ func TestTLSHandshakeFunc_Call_prevStageFailure(t *testing.T) {
 	assert.Nil(t, result.V)
 
 	expect := []slogSimpleRecord{{
-		Level: "info",
+		Level: "debug",
 		Msg:   "tlsHandshakeStart",
 		Attrs: []string{
 			"deadline=2026-01-01 00:00:10 +0000 UTC",
@@ -331,7 +331,7 @@ func TestTLSHandshakeFunc_Call_withValidConn(t *testing.T) {
 			}
 
 			expect := []slogSimpleRecord{{
-				Level: "info",
+				Level: "debug",
 				Msg:   "tlsHandshakeStart",
 				Attrs: []string{
 					"deadline=2026-01-01 00:00:10 +0000 UTC",

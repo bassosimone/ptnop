@@ -337,7 +337,7 @@ func TestHTTPConn_RoundTrip(t *testing.T) {
 			}
 
 			expect := []slogSimpleRecord{{
-				Level: "info",
+				Level: "debug",
 				Msg:   "httpRoundTripStart",
 				Attrs: []string{
 					"deadline=2026-01-01 00:00:10 +0000 UTC",
@@ -540,7 +540,7 @@ func TestHTTPBodyWrapper(t *testing.T) {
 
 			expected := []slogSimpleRecord{
 				{
-					Level: "info",
+					Level: "debug",
 					Msg:   "httpBodyStreamStart",
 					Attrs: []string{
 						"localAddr=10.0.0.1:19774",

@@ -48,7 +48,7 @@ func (op *ConnectFunc) Call(ctx context.Context, address netip.AddrPort) Result[
 	// 1. log before executing the operation
 	t0 := op.TimeNow.Get()
 	deadline, _ := ctx.Deadline()
-	op.SLogger.Info(
+	op.SLogger.Debug(
 		"connectStart",
 		slog.Time("deadline", deadline),
 		slog.String("protocol", op.Network),
