@@ -8,6 +8,7 @@ import (
 	"net"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -60,17 +61,23 @@ func TestObserveConnFunc_Call_success(t *testing.T) {
 	input := Result[net.Conn]{V: origConn}
 
 	// 2. invoke
-	fx := NewObserveConnFunc(NewConfig())
+	logHelper := &slogValidationHelper{}
+	cfg := NewConfig()
+	cfg.TimeNow = logHelper
+	fx := NewObserveConnFunc(cfg)
 	output := fx.Call(context.Background(), input)
 
 	// 3. check
 	expect := Result[net.Conn]{V: &observedConn{
-		closeonce: sync.Once{},
-		conn:      origConn,
-		laddr:     "10.0.0.1:19774",
-		op:        fx,
-		protocol:  "tcp",
-		raddr:     "10.0.0.2:80",
+		closeonce:       sync.Once{},
+		conn:            origConn,
+		created:         cfg.TimeNow.Get(),
+		laddr:           "10.0.0.1:19774",
+		op:              fx,
+		protocol:        "tcp",
+		raddr:           "10.0.0.2:80",
+		totBytesRead:    atomic.Int64{},
+		totBytesWritten: atomic.Int64{},
 	}}
 	assert.Equal(t, expect, output)
 }
@@ -118,15 +125,20 @@ func Test_observedConn_Close(t *testing.T) {
 						return tc.err
 					},
 				},
-				laddr: "10.0.0.1:19774",
+				created: logHelper.Get().Add(-50 * time.Millisecond), // in the past
+				laddr:   "10.0.0.1:19774",
 				op: &ObserveConnFunc{
 					ErrClassifier: DefaultErrClassifier(),
 					SLogger:       logHelper,
 					TimeNow:       logHelper,
 				},
-				protocol: "tcp",
-				raddr:    "10.0.0.2:80",
+				protocol:        "tcp",
+				raddr:           "10.0.0.2:80",
+				totBytesRead:    atomic.Int64{},
+				totBytesWritten: atomic.Int64{},
 			}
+			conn.totBytesRead.Add(256)
+			conn.totBytesWritten.Add(128)
 
 			// 2. invoke
 			err1 := conn.Close()
@@ -150,8 +162,11 @@ func Test_observedConn_Close(t *testing.T) {
 				Level: "info",
 				Msg:   "closeDone",
 				Attrs: []string{
+					"connLifetime=50ms",
 					"err=" + tc.expectErr,
 					"errClass=" + tc.expectErrClass,
+					"ioTotalBytesRead=256",
+					"ioTotalBytesWritten=128",
 					"localAddr=10.0.0.1:19774",
 					"protocol=tcp",
 					"remoteAddr=10.0.0.2:80",
@@ -268,6 +283,9 @@ func Test_observedConn_ReadWrite(t *testing.T) {
 			assert.Equal(t, tc.count, countRead)
 			assert.Equal(t, tc.err, errWrite)
 			assert.Equal(t, tc.count, countWrite)
+
+			assert.Equal(t, int64(countRead), conn.totBytesRead.Load())
+			assert.Equal(t, int64(countWrite), conn.totBytesWritten.Load())
 
 			expect := []slogSimpleRecord{{
 				Level: "debug",

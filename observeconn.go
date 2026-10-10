@@ -13,8 +13,10 @@ import (
 	"log/slog"
 	"net"
 	"sync"
+	"sync/atomic"
 	"time"
 
+	"github.com/bassosimone/runtimex"
 	"github.com/bassosimone/safeconn"
 )
 
@@ -43,24 +45,30 @@ var _ Func[Result[net.Conn], Result[net.Conn]] = &ObserveConnFunc{}
 func (op *ObserveConnFunc) Call(ctx context.Context, conn Result[net.Conn]) Result[net.Conn] {
 	if conn.Err == nil {
 		conn.V = &observedConn{
-			closeonce: sync.Once{},
-			conn:      conn.V,
-			laddr:     safeconn.LocalAddr(conn.V),
-			op:        op,
-			protocol:  safeconn.Network(conn.V),
-			raddr:     safeconn.RemoteAddr(conn.V),
+			closeonce:       sync.Once{},
+			conn:            conn.V,
+			created:         op.TimeNow.Get(),
+			laddr:           safeconn.LocalAddr(conn.V),
+			op:              op,
+			protocol:        safeconn.Network(conn.V),
+			raddr:           safeconn.RemoteAddr(conn.V),
+			totBytesRead:    atomic.Int64{},
+			totBytesWritten: atomic.Int64{},
 		}
 	}
 	return conn
 }
 
 type observedConn struct {
-	closeonce sync.Once
-	conn      net.Conn
-	laddr     string
-	op        *ObserveConnFunc
-	protocol  string
-	raddr     string
+	closeonce       sync.Once
+	conn            net.Conn
+	created         time.Time
+	laddr           string
+	op              *ObserveConnFunc
+	protocol        string
+	raddr           string
+	totBytesRead    atomic.Int64
+	totBytesWritten atomic.Int64
 }
 
 func (c *observedConn) Close() (err error) {
@@ -83,8 +91,11 @@ func (c *observedConn) Close() (err error) {
 		// 3. log after the operation
 		c.op.SLogger.Info(
 			"closeDone",
+			slog.Duration("connLifetime", t0.Sub(c.created)),
 			slog.Any("err", err),
 			slog.String("errClass", c.op.ErrClassifier.Classify(err)),
+			slog.Int64("ioTotalBytesRead", c.totBytesRead.Load()),
+			slog.Int64("ioTotalBytesWritten", c.totBytesWritten.Load()),
 			slog.String("localAddr", c.laddr),
 			slog.String("protocol", c.protocol),
 			slog.String("remoteAddr", c.raddr),
@@ -114,6 +125,8 @@ func (c *observedConn) Read(buf []byte) (int, error) {
 
 	// 2. execute the operation
 	count, err := c.conn.Read(buf)
+	runtimex.Assert(count >= 0 && count <= len(buf))
+	c.totBytesRead.Add(int64(count))
 
 	// 3. log after the operation
 	c.op.SLogger.Debug(
@@ -194,6 +207,8 @@ func (c *observedConn) Write(data []byte) (int, error) {
 
 	// 2. execute the operation
 	count, err := c.conn.Write(data)
+	runtimex.Assert(count >= 0 && count <= len(data))
+	c.totBytesWritten.Add(int64(count))
 
 	// 3. log after the operation
 	c.op.SLogger.Debug(
