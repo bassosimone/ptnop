@@ -50,6 +50,18 @@ func TestDefaultTLSEngine(t *testing.T) {
 	assert.Equal(t, "", eng.Parrot())
 }
 
+type funcTLSEngine struct {
+	tlsstub.FuncTLSEngine[TLSConn]
+	MaybeExtractCertsFunc func(err error) [][]byte
+}
+
+var _ TLSEngine = &funcTLSEngine{}
+
+// MaybeExtractCerts implements [TLSEngine].
+func (f *funcTLSEngine) MaybeExtractCerts(err error) [][]byte {
+	return f.MaybeExtractCertsFunc(err)
+}
+
 // Make sure [TLSHandshakeFunc.Call] returns the correct value on previous stage failure.
 func TestTLSHandshakeFunc_Call_prevStageFailure(t *testing.T) {
 	// 1. setup
@@ -67,11 +79,12 @@ func TestTLSHandshakeFunc_Call_prevStageFailure(t *testing.T) {
 	defer cancel()
 	input := Result[net.Conn]{Err: mocked}
 	fx := NewTLSHandshakeFunc(cfg, tlsConfig)
-	fx.Engine = &tlsstub.FuncTLSEngine[TLSConn]{
+	fx.Engine = &funcTLSEngine{
 		ClientFunc: func(conn net.Conn, config *tls.Config) TLSConn {
 			t.Fatal("the engine must not be invoked on skip")
 			return nil
 		},
+		MaybeExtractCertsFunc: DefaultTLSEngine().MaybeExtractCerts,
 		NameFunc: func() string {
 			return "custom"
 		},
@@ -194,15 +207,22 @@ func TestTLSHandshakeFunc_Call_withValidConn(t *testing.T) {
 		},
 		{
 			name: "err=x509.HostnameError",
-			err: x509.HostnameError{
-				Certificate: &x509.Certificate{
-					Raw: []byte("0xdeadbeef"),
+			err: &tls.CertificateVerificationError{
+				UnverifiedCertificates: []*x509.Certificate{
+					{Raw: []byte("0xdeadbeef")},
+					{Raw: []byte("0xabad1dea")},
 				},
-				Host: "www.example.com",
+				Err: x509.HostnameError{
+					Certificate: &x509.Certificate{
+						Raw: []byte("0xdeadbeef"),
+					},
+					Host: "www.example.com",
+				},
 			},
 			stateMod:   nil,
-			expectPeer: "[[48 120 100 101 97 100 98 101 101 102]]",
-			expectErr: "x509: certificate is not valid for any " +
+			expectPeer: "[[48 120 100 101 97 100 98 101 101 102] [48 120 97 98 97 100 49 100 101 97]]",
+			expectErr: "tls: failed to verify certificate: " +
+				"x509: certificate is not valid for any " +
 				"names, but wanted to match www.example.com",
 			expectClass:              "ETLS_HOSTNAME_MISMATCH",
 			expectCipherSuite:        "0x0000",
@@ -212,14 +232,21 @@ func TestTLSHandshakeFunc_Call_withValidConn(t *testing.T) {
 		},
 		{
 			name: "err=x509.UnknownAuthorityError",
-			err: x509.UnknownAuthorityError{
-				Cert: &x509.Certificate{
-					Raw: []byte("0xdeadbeef"),
+			err: &tls.CertificateVerificationError{
+				UnverifiedCertificates: []*x509.Certificate{
+					{Raw: []byte("0xdeadbeef")},
+					{Raw: []byte("0xabad1dea")},
+				},
+				Err: x509.UnknownAuthorityError{
+					Cert: &x509.Certificate{
+						Raw: []byte("0xdeadbeef"),
+					},
 				},
 			},
-			stateMod:                 nil,
-			expectPeer:               "[[48 120 100 101 97 100 98 101 101 102]]",
-			expectErr:                "x509: certificate signed by unknown authority",
+			stateMod:   nil,
+			expectPeer: "[[48 120 100 101 97 100 98 101 101 102] [48 120 97 98 97 100 49 100 101 97]]",
+			expectErr: "tls: failed to verify certificate: " +
+				"x509: certificate signed by unknown authority",
 			expectClass:              "ETLS_CA_UNKNOWN",
 			expectCipherSuite:        "0x0000",
 			expectNegotiatedProtocol: "",
@@ -228,21 +255,51 @@ func TestTLSHandshakeFunc_Call_withValidConn(t *testing.T) {
 		},
 		{
 			name: "err=x509.CertificateInvalidError",
-			err: x509.CertificateInvalidError{
-				Cert: &x509.Certificate{
-					Raw: []byte("0xdeadbeef"),
+			err: &tls.CertificateVerificationError{
+				UnverifiedCertificates: []*x509.Certificate{
+					{Raw: []byte("0xdeadbeef")},
+					{Raw: []byte("0xabad1dea")},
 				},
-				Reason: 0,
-				Detail: "",
+				Err: x509.CertificateInvalidError{
+					Cert: &x509.Certificate{
+						Raw: []byte("0xdeadbeef"),
+					},
+					Reason: 0,
+					Detail: "",
+				},
 			},
-			stateMod:                 nil,
-			expectPeer:               "[[48 120 100 101 97 100 98 101 101 102]]",
-			expectErr:                "x509: certificate is not authorized to sign other certificates",
+			stateMod:   nil,
+			expectPeer: "[[48 120 100 101 97 100 98 101 101 102] [48 120 97 98 97 100 49 100 101 97]]",
+			expectErr: "tls: failed to verify certificate: " +
+				"x509: certificate is not authorized to sign other certificates",
 			expectClass:              "ETLS_CERT_INVALID",
 			expectCipherSuite:        "0x0000",
 			expectNegotiatedProtocol: "",
 			expectOfferedProtocols:   "[h2 http/1.1]",
 			expectVersion:            "0x0000",
+		},
+		{
+			// Make sure that we find certificates in connection state when there is an
+			// error happening after the certificate has been verified
+			name: "err=mocked with certs in ConnectionState",
+			err:  mockedErr,
+			stateMod: func(state *tls.ConnectionState) {
+				state.Version = tls.VersionTLS13
+				state.HandshakeComplete = false // this is set at the end
+				state.CipherSuite = tls.TLS_AES_256_GCM_SHA384
+				state.NegotiatedProtocol = "h2"
+				state.ServerName = "en.wikipedia.org"
+				state.PeerCertificates = []*x509.Certificate{{
+					Raw: []byte("0xdeadbeef"),
+				}}
+			},
+			expectPeer:               "[[48 120 100 101 97 100 98 101 101 102]]",
+			expectErr:                "mocked",
+			expectClass:              "EGENERIC",
+			expectCipherSuite:        "TLS_AES_256_GCM_SHA384",
+			expectNegotiatedProtocol: "h2",
+			expectOfferedProtocols:   "[h2 http/1.1]",
+			expectVersion:            "TLS 1.3",
 		},
 	}
 
@@ -295,7 +352,7 @@ func TestTLSHandshakeFunc_Call_withValidConn(t *testing.T) {
 			}
 
 			fx := NewTLSHandshakeFunc(cfg, tlsConfig)
-			fx.Engine = &tlsstub.FuncTLSEngine[TLSConn]{
+			fx.Engine = &funcTLSEngine{
 				ClientFunc: func(conn net.Conn, config *tls.Config) TLSConn {
 					return &tlsstub.FuncTLSConn{
 						FuncConn: conn.(*netstub.FuncConn), // we don't wrap in TLSHandshakeFunc
@@ -307,6 +364,7 @@ func TestTLSHandshakeFunc_Call_withValidConn(t *testing.T) {
 						},
 					}
 				},
+				MaybeExtractCertsFunc: DefaultTLSEngine().MaybeExtractCerts,
 				NameFunc: func() string {
 					return "custom"
 				},

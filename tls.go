@@ -11,7 +11,6 @@ package ptnop
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"log/slog"
 	"net"
@@ -28,8 +27,13 @@ type TLSConn interface {
 }
 
 // TLSEngine allows mocking the [crypto/tls] library for testing.
+//
+// MaybeExtractCerts checks for the TLS engine specific error emitted on certificate
+// verification error and extracts the certs. When using [crypto/tls], the specific error
+// is [*tls.CertificateVerificationError]; uTLS has an error with the same name.
 type TLSEngine interface {
 	Client(conn net.Conn, config *tls.Config) TLSConn
+	MaybeExtractCerts(err error) [][]byte
 	Name() string
 	Parrot() string
 }
@@ -45,6 +49,16 @@ var _ TLSEngine = &cryptoTLSEngine{}
 
 func (*cryptoTLSEngine) Client(conn net.Conn, config *tls.Config) TLSConn {
 	return tls.Client(conn, config)
+}
+
+func (*cryptoTLSEngine) MaybeExtractCerts(err error) (out [][]byte) {
+	out = [][]byte{}
+	if cve, ok := errors.AsType[*tls.CertificateVerificationError](err); ok {
+		for _, cert := range cve.UnverifiedCertificates {
+			out = append(out, cert.Raw)
+		}
+	}
+	return
 }
 
 func (*cryptoTLSEngine) Name() string {
@@ -167,25 +181,16 @@ func (op *TLSHandshakeFunc) Call(ctx context.Context, input Result[net.Conn]) Re
 func (op *TLSHandshakeFunc) peerCerts(state tls.ConnectionState, err error) (out [][]byte) {
 	out = [][]byte{}
 
-	// 1. Check whether the error is a known certificate error and extract
-	// the certificate using `errors.As` for additional robustness.
-	if x509HostnameError, ok := errors.AsType[x509.HostnameError](err); ok {
-		// Test case: https://wrong.host.badssl.com/
-		out = append(out, x509HostnameError.Certificate.Raw)
-		return
-	}
-
-	if x509UnknownAuthorityError, ok := errors.AsType[x509.UnknownAuthorityError](err); ok {
-		// Test case: https://self-signed.badssl.com/. This error has
-		// never been among the ones returned by MK.
-		out = append(out, x509UnknownAuthorityError.Cert.Raw)
-		return
-	}
-
-	if x509CertificateInvalidError, ok := errors.AsType[x509.CertificateInvalidError](err); ok {
-		// Test case: https://expired.badssl.com/
-		out = append(out, x509CertificateInvalidError.Cert.Raw)
-		return
+	// 1. Try extracting certs from [*tls.CertificateVerificationError], when using the
+	// stdlib, or from the engine-equivalent error when using a different engine.
+	//
+	// Test cases:
+	//
+	// - [x509.CertificateInvalidError]: https://expired.badssl.com/
+	// - [x509.HostnameError]: https://wrong.host.badssl.com/
+	// - [x509.UnknownAuthorityError]: https://self-signed.badssl.com/
+	if certs := op.Engine.MaybeExtractCerts(err); len(certs) > 0 {
+		return certs
 	}
 
 	// 2. Otherwise extract certificates from the connection state.
