@@ -42,6 +42,11 @@ type HTTPEngine interface {
 	// The stdlib equivalent of this function calls for setting DialContext and
 	// DialTLSContext on a transport using dialer.DialContext and tlsDialer.DialContext and
 	// then invoking the NewClientConn method of the transport to get the client conn.
+	//
+	// Our default implementation, [DefaultHTTPEngine], also sets the
+	// DisableCompression field to true, which causes the stdlib to stop
+	// automatic response body decompression, as described by the
+	// field's docs: [http.Transport.DisableCompression].
 	NewClientConn(ctx context.Context, dialer, tlsDialer Dialer,
 		scheme, raddr string) (HTTPEngineConn, error)
 }
@@ -59,9 +64,10 @@ var _ HTTPEngine = &netHTTPEngine{}
 func (eng *netHTTPEngine) NewClientConn(ctx context.Context, dialer Dialer,
 	tlsDialer Dialer, scheme string, raddr string) (HTTPEngineConn, error) {
 	txp := &http.Transport{
-		DialContext:       dialer.DialContext,    // scheme picks the dialing func
-		DialTLSContext:    tlsDialer.DialContext, // scheme picks the dialing func
-		ForceAttemptHTTP2: true,                  // go1.27+: https://go.dev/doc/go1.27#nethttppkgnethttp
+		DialContext:        dialer.DialContext,    // scheme picks the dialing func
+		DialTLSContext:     tlsDialer.DialContext, // scheme picks the dialing func
+		DisableCompression: true,                  // better default for measuring
+		ForceAttemptHTTP2:  true,                  // go1.27+: https://go.dev/doc/go1.27#nethttppkgnethttp
 	}
 	return txp.NewClientConn(ctx, scheme, raddr)
 }
