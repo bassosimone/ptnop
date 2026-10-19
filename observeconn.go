@@ -126,7 +126,7 @@ func (c *observedConn) Read(buf []byte) (int, error) {
 	// 2. execute the operation
 	count, err := c.conn.Read(buf)
 	runtimex.Assert(count >= 0 && count <= len(buf))
-	c.totBytesRead.Add(int64(count))
+	total := c.totBytesRead.Add(int64(count))
 
 	// 3. log after the operation
 	c.op.SLogger.Debug(
@@ -134,6 +134,7 @@ func (c *observedConn) Read(buf []byte) (int, error) {
 		slog.Any("err", err),
 		slog.String("errClass", c.op.ErrClassifier.Classify(err)),
 		slog.Int("ioBytesCount", count),
+		slog.Int64("ioTotalBytesRead", total),
 		slog.String("localAddr", c.laddr),
 		slog.String("protocol", c.protocol),
 		slog.String("remoteAddr", c.raddr),
@@ -208,7 +209,7 @@ func (c *observedConn) Write(data []byte) (int, error) {
 	// 2. execute the operation
 	count, err := c.conn.Write(data)
 	runtimex.Assert(count >= 0 && count <= len(data))
-	c.totBytesWritten.Add(int64(count))
+	total := c.totBytesWritten.Add(int64(count))
 
 	// 3. log after the operation
 	c.op.SLogger.Debug(
@@ -216,6 +217,7 @@ func (c *observedConn) Write(data []byte) (int, error) {
 		slog.Any("err", err),
 		slog.String("errClass", c.op.ErrClassifier.Classify(err)),
 		slog.Int("ioBytesCount", count),
+		slog.Int64("ioTotalBytesWritten", total),
 		slog.String("localAddr", c.laddr),
 		slog.String("protocol", c.protocol),
 		slog.String("remoteAddr", c.raddr),
