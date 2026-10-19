@@ -8,6 +8,8 @@ package ptnop
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/bassosimone/dnscodec"
 	"github.com/bassosimone/dnsoverhttps"
 	"github.com/bassosimone/runtimex"
@@ -17,11 +19,18 @@ import (
 // DNSOverHTTPSConnFunc is the [Func] that creates [*DNSOverHTTPSConn].
 //
 // Use [NewDNSOverHTTPSConnFunc] to create a new instance.
+//
+// Manually set OverrideHeader ahead of usage to override the request headers
+// that would be sent. Values in OverrideHeader (1) replace the values we
+// would normally send (e.g. `Content-Type: application/dns-message`) and (2)
+// are copied in the request otherwise. A nil/empty list of values removes
+// the header. To send no `User-Agent`, set it to `[]string{""}`.
 type DNSOverHTTPSConnFunc struct {
-	ErrClassifier ErrClassifier
-	SLogger       SLogger
-	TimeNow       TimeNowProvider
-	URL           string
+	ErrClassifier  ErrClassifier
+	OverrideHeader http.Header
+	SLogger        SLogger
+	TimeNow        TimeNowProvider
+	URL            string
 }
 
 // NewDNSOverHTTPSConnFunc creates a [*DNSOverHTTPSConnFunc] using the [*Config]
@@ -32,10 +41,11 @@ type DNSOverHTTPSConnFunc struct {
 // it as the `:scheme` pseudo-header, so use `https`.
 func NewDNSOverHTTPSConnFunc(cfg *Config, targetURL string) *DNSOverHTTPSConnFunc {
 	return &DNSOverHTTPSConnFunc{
-		ErrClassifier: cfg.ErrClassifier,
-		SLogger:       cfg.SLogger,
-		TimeNow:       cfg.TimeNow,
-		URL:           targetURL,
+		ErrClassifier:  cfg.ErrClassifier,
+		OverrideHeader: http.Header{},
+		SLogger:        cfg.SLogger,
+		TimeNow:        cfg.TimeNow,
+		URL:            targetURL,
 	}
 }
 
@@ -46,14 +56,15 @@ var _ Func[*HTTPConn, DNSConn] = &DNSOverHTTPSConnFunc{}
 // The returned value is a [*DNSOverHTTPSConn].
 func (op *DNSOverHTTPSConnFunc) Call(ctx context.Context, httpConn *HTTPConn) DNSConn {
 	return &DNSOverHTTPSConn{
-		ErrClassifier: op.ErrClassifier,
-		HTTPConn:      httpConn,
-		LocalAddr:     httpConn.LocalAddr,
-		Proto:         httpConn.Proto,
-		RemoteAddr:    httpConn.RemoteAddr,
-		SLogger:       op.SLogger,
-		TimeNow:       op.TimeNow,
-		URL:           op.URL,
+		ErrClassifier:  op.ErrClassifier,
+		HTTPConn:       httpConn,
+		LocalAddr:      httpConn.LocalAddr,
+		OverrideHeader: op.OverrideHeader,
+		Proto:          httpConn.Proto,
+		RemoteAddr:     httpConn.RemoteAddr,
+		SLogger:        op.SLogger,
+		TimeNow:        op.TimeNow,
+		URL:            op.URL,
 	}
 }
 
@@ -61,14 +72,15 @@ func (op *DNSOverHTTPSConnFunc) Call(ctx context.Context, httpConn *HTTPConn) DN
 //
 // Typically constructed by [*DNSOverHTTPSConnFunc].
 type DNSOverHTTPSConn struct {
-	ErrClassifier ErrClassifier
-	HTTPConn      HTTPEngineConn
-	LocalAddr     string
-	Proto         string
-	RemoteAddr    string
-	SLogger       SLogger
-	TimeNow       TimeNowProvider
-	URL           string
+	ErrClassifier  ErrClassifier
+	HTTPConn       HTTPEngineConn
+	LocalAddr      string
+	OverrideHeader http.Header
+	Proto          string
+	RemoteAddr     string
+	SLogger        SLogger
+	TimeNow        TimeNowProvider
+	URL            string
 }
 
 // Close closes the underlying [*HTTPConn].
@@ -104,19 +116,27 @@ func (c *DNSOverHTTPSConn) Exchange(
 		return nil, err
 	}
 
-	// 3. Perform the HTTP round trip
+	// 3. Rewrite the request headers to honor the overrides
+	for key, values := range c.OverrideHeader {
+		httpReq.Header.Del(key)
+		for _, value := range values {
+			httpReq.Header.Add(key, value)
+		}
+	}
+
+	// 4. Perform the HTTP round trip
 	httpResp, err := c.HTTPConn.RoundTrip(httpReq)
 	if err != nil {
 		lc.LogDone(t0, deadline, err)
 		return nil, err
 	}
 
-	// 4. Read the response and validate it
+	// 5. Read the response and validate it
 	resp, err := dnsoverhttps.ReadResponseWithHook(
 		ctx, httpResp, queryMsg, lc.MakeResponseObserver(t0, &rqr))
 	lc.LogDone(t0, deadline, err)
 
-	// 5. enforce output invariant and return
+	// 6. enforce output invariant and return
 	runtimex.Assert((resp != nil && err == nil) || (resp == nil && err != nil))
 	return resp, err
 }

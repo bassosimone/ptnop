@@ -275,3 +275,101 @@ func TestDNSOverHTTPSConn_Exchange(t *testing.T) {
 		})
 	}
 }
+
+// Make sure we can override headers including Content-Type.
+func TestDNSOverHTTPSConn_overrideHeader(t *testing.T) {
+	// We use test cases for multiple tests
+	type testcase struct {
+		name   string
+		values http.Header
+		expect http.Header
+	}
+
+	cases := []testcase{
+		{
+			name: "we can override the Content-Type",
+			values: http.Header{
+				"Accept":       []string{"application/json", "application/x-tar"},
+				"Content-Type": []string{"text/plain"},
+			},
+			expect: http.Header{
+				"Accept":       []string{"application/json", "application/x-tar"},
+				"Content-Type": []string{"text/plain"},
+			},
+		},
+		{
+			name: "with stock Content-Type",
+			values: http.Header{
+				"Accept":     []string{"text/plain", "application/x-tar"},
+				"User-Agent": []string{"sonda/0.1.0"},
+			},
+			expect: http.Header{
+				"Accept":       []string{"text/plain", "application/x-tar"},
+				"Content-Type": []string{"application/dns-message"},
+				"User-Agent":   []string{"sonda/0.1.0"},
+			},
+		},
+		{
+			name: "with empty Content-Type",
+			values: http.Header{
+				"Accept":       []string{"text/plain", "application/x-tar"},
+				"Content-Type": []string{},
+				"User-Agent":   []string{"sonda/0.1.0"},
+			},
+			expect: http.Header{
+				"Accept":     []string{"text/plain", "application/x-tar"},
+				"User-Agent": []string{"sonda/0.1.0"},
+			},
+		},
+		{
+			name: "with empty User-Agent",
+			values: http.Header{
+				"User-Agent": []string{""},
+			},
+			expect: http.Header{
+				"Content-Type": []string{"application/dns-message"},
+				"User-Agent":   []string{""},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			// 1. setup
+			var (
+				mockErr  = errors.New("mocked")
+				savedReq *http.Request
+			)
+
+			defaultQuery := dnscodec.NewQuery("www.example.com", dns.TypeA)
+			httpConn := &funcHTTPClientConn{
+				RoundTripFunc: func(req *http.Request) (*http.Response, error) {
+					savedReq = req
+					return nil, mockErr
+				},
+			}
+
+			logHelper := &slogValidationHelper{}
+			conn := &DNSOverHTTPSConn{
+				ErrClassifier: DefaultErrClassifier(),
+				HTTPConn:      httpConn,
+				LocalAddr:     "10.0.0.1:19774",
+				Proto:         "tcp",
+				RemoteAddr:    "10.0.0.2:53",
+				SLogger:       logHelper,
+				TimeNow:       logHelper,
+				URL:           "",
+			}
+
+			conn.OverrideHeader = tc.values
+
+			// 2. execute
+			resp, err := conn.Exchange(context.Background(), defaultQuery)
+
+			// 3. check
+			assert.Nil(t, resp)
+			assert.Same(t, mockErr, err)
+			assert.Equal(t, tc.expect, savedReq.Header)
+		})
+	}
+}
